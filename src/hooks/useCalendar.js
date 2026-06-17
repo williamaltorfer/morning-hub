@@ -118,14 +118,149 @@ async function fetchEvents(accessToken) {
   return (json.items || []).map(mapEvent)
 }
 
+const SPECIAL_RE  = /birthday|anniversary|bday/i
+const UPCOMING_RE = /flight|airline|airport|hotel|airbnb|resort|appointment|appt|doctor|dentist|medical|physical|therapy|therapist|conference|summit|workshop|trip|travel|vacation|holiday|train|amtrak|visit|checkup|check.?up/i
+
+async function findBirthdayCalendarId(accessToken) {
+  try {
+    const resp = await fetch(
+      'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    )
+    if (!resp.ok) return null
+    const data = await resp.json()
+    const cal = (data.items || []).find(c =>
+      c.summary?.toLowerCase().includes('birthday') ||
+      c.id?.includes('contacts@group')
+    )
+    return cal?.id ?? null
+  } catch { return null }
+}
+
+async function fetchCalendarItems(calendarId, params, accessToken) {
+  try {
+    const resp = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    )
+    if (!resp.ok) return []
+    const data = await resp.json()
+    return data.items || []
+  } catch { return [] }
+}
+
+async function fetchSpecialEvents(accessToken) {
+  const start = new Date(); start.setHours(0, 0, 0, 0)
+  const end   = new Date(start); end.setDate(start.getDate() + 14); end.setHours(23, 59, 59, 999)
+
+  const params = new URLSearchParams({
+    timeMin:      start.toISOString(),
+    timeMax:      end.toISOString(),
+    singleEvents: 'true',
+    orderBy:      'startTime',
+    maxResults:   '50',
+  }).toString()
+
+  const [birthdayCalId, primaryItems] = await Promise.all([
+    findBirthdayCalendarId(accessToken),
+    fetchCalendarItems('primary', params, accessToken),
+  ])
+
+  const birthdayItems = birthdayCalId
+    ? await fetchCalendarItems(birthdayCalId, params, accessToken)
+    : []
+
+  // Deduplicate by event summary+date, then filter for keywords
+  const seen = new Set()
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+
+  return [...primaryItems, ...birthdayItems]
+    .filter(e => SPECIAL_RE.test(e.summary || ''))
+    .map(e => {
+      const dateStr  = e.start.date || (e.start.dateTime || '').split('T')[0]
+      const eventDay = new Date(dateStr + 'T00:00:00')
+      const daysAway = Math.round((eventDay - today) / 86400000)
+      return { id: e.id, name: e.summary || '(No title)', dateStr, daysAway }
+    })
+    .filter(e => {
+      if (e.daysAway < 0 || e.daysAway > 14) return false
+      const key = `${e.name}|${e.dateStr}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .sort((a, b) => a.daysAway - b.daysAway)
+}
+
+async function fetchUpcomingEvents(accessToken) {
+  const start = new Date(); start.setHours(0, 0, 0, 0)
+  const end   = new Date(start); end.setDate(start.getDate() + 14); end.setHours(23, 59, 59, 999)
+
+  const params = new URLSearchParams({
+    timeMin:      start.toISOString(),
+    timeMax:      end.toISOString(),
+    singleEvents: 'true',
+    orderBy:      'startTime',
+    maxResults:   '50',
+  }).toString()
+
+  const items = await fetchCalendarItems('primary', params, accessToken)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+
+  function classifyType(name, isAllDay) {
+    if (/flight|airline|airport|plane/i.test(name))                              return 'flight'
+    if (/hotel|airbnb|resort|check.?in|check.?out/i.test(name))                  return 'hotel'
+    if (/trip|travel|vacation|holiday/i.test(name))                              return 'trip'
+    if (/doctor|dr\b|dentist|medical|physical|therapy|appointment|appt|checkup/i.test(name)) return 'appointment'
+    if (/conference|summit|workshop/i.test(name))                                return 'conference'
+    if (isAllDay)                                                                 return 'allday'
+    return 'event'
+  }
+
+  return items
+    .filter(e => {
+      // Exclude events that match the birthday/anniversary filter (handled separately)
+      if (SPECIAL_RE.test(e.summary || '')) return false
+      const isAllDay = !e.start.dateTime
+      return isAllDay || UPCOMING_RE.test(e.summary || '')
+    })
+    .map(e => {
+      const isAllDay   = !e.start.dateTime
+      const dateStr    = e.start.date    || (e.start.dateTime || '').split('T')[0]
+      const endDateStr = e.end.date      || (e.end.dateTime   || '').split('T')[0]
+      const eventDay   = new Date(dateStr + 'T00:00:00')
+      const endDay     = endDateStr ? new Date(endDateStr + 'T00:00:00') : eventDay
+      const daysAway   = Math.round((eventDay - today) / 86400000)
+      // Google's all-day end date is exclusive (next day), so subtract 1
+      const duration   = isAllDay
+        ? Math.max(1, Math.round((endDay - eventDay) / 86400000))
+        : 1
+
+      return {
+        id:       e.id,
+        name:     e.summary || '(No title)',
+        dateStr,
+        daysAway,
+        duration,
+        isAllDay,
+        type:     classifyType(e.summary || '', isAllDay),
+        location: e.location ? e.location.split(',').slice(0, 2).join(',').trim() : null,
+      }
+    })
+    .filter(e => e.daysAway >= 0 && e.daysAway <= 14)
+    .sort((a, b) => a.daysAway - b.daysAway)
+}
+
 // ── Hook ─────────────────────────────────────────────────────
 
 export default function useCalendar() {
-  const [token,      setToken]      = useState(() => loadStoredToken())
-  const [events,     setEvents]     = useState([])
-  const [loading,    setLoading]    = useState(false)
-  const [connecting, setConnecting] = useState(false)
-  const [error,      setError]      = useState(null)
+  const [token,           setToken]           = useState(() => loadStoredToken())
+  const [events,          setEvents]          = useState([])
+  const [specialEvents,   setSpecialEvents]   = useState([])
+  const [upcomingEvents,  setUpcomingEvents]  = useState([])
+  const [loading,         setLoading]         = useState(false)
+  const [connecting,     setConnecting]     = useState(false)
+  const [error,          setError]          = useState(null)
   const clientRef = useRef(null)
 
   // Initialize GIS token client (script is async-deferred)
@@ -161,8 +296,16 @@ export default function useCalendar() {
     if (!token) return
     setLoading(true)
     setError(null)
-    fetchEvents(token)
-      .then(setEvents)
+    Promise.all([
+      fetchEvents(token),
+      fetchSpecialEvents(token).catch(() => []),
+      fetchUpcomingEvents(token).catch(() => []),
+    ])
+      .then(([evts, specials, upcoming]) => {
+        setEvents(evts)
+        setSpecialEvents(specials)
+        setUpcomingEvents(upcoming)
+      })
       .catch(err => {
         if (err.status === 401) {
           localStorage.removeItem(TOKEN_KEY)
@@ -187,6 +330,8 @@ export default function useCalendar() {
 
   return {
     events,
+    specialEvents,
+    upcomingEvents,
     loading,
     connecting,
     error,

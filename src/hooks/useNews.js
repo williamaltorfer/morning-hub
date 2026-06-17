@@ -1,14 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const CACHE_KEY = 'morning_hub_feed'
 const CACHE_TTL = 30 * 60 * 1000
-
-const FEEDS = [
-  { url: 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml', label: 'The Verge · AI',        topic: 'ai'       },
-  { url: 'https://www.adexchanger.com/feed/',                                  label: 'AdExchanger',           topic: 'perf mktg'},
-  { url: 'https://feeds.npr.org/1017/rss.xml',                                 label: 'NPR · Economy',         topic: 'economy'  },
-  { url: 'https://blockclubchicago.org/feed/',                                 label: 'Block Club Chicago',    topic: 'chicago'  },
-]
 
 function relAge(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -62,12 +55,19 @@ function saveCache(articles) {
   } catch {}
 }
 
-export default function useNews() {
+// feeds is the live array from HubContext; changes trigger a refetch
+export default function useNews(feeds = []) {
   const [articles, setArticles] = useState([])
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(null)
 
+  // Stable ref so the effect body can read latest feeds without re-declaring
+  const feedsRef = useRef(feeds)
+  feedsRef.current = feeds
+
   useEffect(() => {
+    if (!feeds.length) { setLoading(false); return }
+
     const cached = loadCache()
     if (cached) {
       setArticles(cached)
@@ -75,7 +75,10 @@ export default function useNews() {
       return
     }
 
-    Promise.allSettled(FEEDS.map(fetchFeed))
+    setLoading(true)
+    setError(null)
+
+    Promise.allSettled(feedsRef.current.map(fetchFeed))
       .then(results => {
         const merged = results
           .flatMap(r => r.status === 'fulfilled' ? r.value : [])
@@ -89,7 +92,7 @@ export default function useNews() {
         }
       })
       .finally(() => setLoading(false))
-  }, [])
+  }, [feeds]) // re-runs when feeds array reference changes (add/remove)
 
   return { articles, loading, error }
 }

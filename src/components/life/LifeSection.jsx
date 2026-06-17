@@ -1,88 +1,187 @@
-const MEALS = [
-  { label: 'Breakfast', name: 'Avocado toast with soft egg',      tag: '~420 cal · 22g protein' },
-  { label: 'Lunch',     name: 'Mediterranean grain bowl',          tag: '~580 cal · Quick · Post-haircut' },
-  { label: 'Dinner',    name: "Wrigley hot dog — don't overthink it", tag: 'Cubs night, enjoy it' },
-]
+import { useHub } from '../../context/HubContext'
 
-const REMINDERS = [
-  { task: 'Annual physical — schedule before end of June',  meta: 'Dr. Keller · Northwestern',  pri: 'Reminder', priClass: 'pri-med' },
-  { task: "Dad's flight lands June 7th — confirm pickup",   meta: "O'Hare · Terminal 3",         pri: 'Reminder', priClass: 'pri-med' },
-  { task: "Renew renter's insurance — expires June 30",     meta: 'Auto-renewal off',             pri: 'Action needed', priClass: 'pri-hi', last: true },
-]
+// ── Icons ────────────────────────────────────────────────────
 
-function ShoppingBagIcon() {
+function CakeIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-      <line x1="3" y1="6" x2="21" y2="6"/>
-      <path d="M16 10a4 4 0 0 1-8 0"/>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/>
+      <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/>
+      <path d="M2 21h20"/>
+      <path d="M7 8v2"/><path d="M12 8v2"/><path d="M17 8v2"/>
+      <path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/>
     </svg>
   )
 }
 
-function GiftIcon() {
+function HeartIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 12 20 22 4 22 4 12"/>
-      <rect x="2" y="7" width="20" height="5"/>
-      <line x1="12" y1="22" x2="12" y2="7"/>
-      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
-      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
     </svg>
+  )
+}
+
+function CalendarIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--stone-light)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  )
+}
+
+// ── Upcoming event type config ───────────────────────────────
+
+const TYPE_CONFIG = {
+  flight:      { label: 'Flight',      cls: 'pri-hi'  },
+  hotel:       { label: 'Hotel',       cls: 'pri-med' },
+  trip:        { label: 'Trip',        cls: 'pri-med' },
+  appointment: { label: 'Appointment', cls: 'pri-med' },
+  conference:  { label: 'Conference',  cls: 'pri-med' },
+  allday:      { label: 'All Day',     cls: 'pri-lo'  },
+  event:       { label: 'Event',       cls: 'pri-lo'  },
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+
+function isAnniversary(name) {
+  return /anniversary/i.test(name)
+}
+
+function daysLabel(n) {
+  if (n === 0) return 'Today'
+  if (n === 1) return 'Tomorrow'
+  return `In ${n} day${n !== 1 ? 's' : ''}`
+}
+
+function fmtDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00')
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+}
+
+// ── Special event card ───────────────────────────────────────
+
+function SpecialEventCard({ event }) {
+  const anniversary = isAnniversary(event.name)
+  const urgent      = event.daysAway <= 3
+
+  return (
+    <div className="gift-card">
+      <div className="gift-icon" style={anniversary ? { background: 'var(--sage)' } : {}}>
+        {anniversary ? <HeartIcon /> : <CakeIcon />}
+      </div>
+      <div className="gift-body">
+        <div className="gift-title">{event.name}</div>
+        <div className="gift-sub">
+          <span style={urgent ? { color: 'var(--terra)', fontWeight: 500 } : {}}>
+            {daysLabel(event.daysAway)}
+          </span>
+          {' · '}{fmtDate(event.dateStr)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Main section ─────────────────────────────────────────────
+
+function UpcomingItem({ event, last }) {
+  const cfg     = TYPE_CONFIG[event.type] ?? TYPE_CONFIG.event
+  const urgent  = event.daysAway <= 1
+
+  const metaParts = [
+    daysLabel(event.daysAway),
+    fmtDate(event.dateStr),
+    event.duration > 1 ? `${event.duration} days` : null,
+    event.location  || null,
+  ].filter(Boolean)
+
+  return (
+    <div className="todo-item" style={last ? { borderBottom: 'none' } : {}}>
+      <div className="t-body">
+        <div className="t-task">{event.name}</div>
+        <div className="t-meta">
+          <span
+            className="t-due"
+            style={urgent ? { color: 'var(--terra)', fontWeight: 500 } : {}}
+          >
+            {metaParts.join(' · ')}
+          </span>
+          <span className={`t-pri ${cfg.cls}`}>{cfg.label}</span>
+        </div>
+      </div>
+    </div>
   )
 }
 
 export default function LifeSection() {
+  const { calendar } = useHub()
+  const { specialEvents, upcomingEvents, connected, loading } = calendar
+
   return (
     <>
       <div className="sec-hdr">
-        <span className="sec-title">Meals Today</span>
-        <span className="sec-action">Plan Week</span>
-      </div>
-      <div className="card">
-        {MEALS.map(m => (
-          <div key={m.label} className="meal-row">
-            <div className="meal-label-col"><span className="meal-lbl">{m.label}</span></div>
-            <div className="meal-content">
-              <div className="meal-name">{m.name}</div>
-              <div className="meal-tag">{m.tag}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <button className="outline-btn">
-        <ShoppingBagIcon /> Generate Grocery List
-      </button>
-
-      <div className="sec-hdr">
         <span className="sec-title">Personal</span>
       </div>
+
       <div className="card">
-        <div className="gift-card">
-          <div className="gift-icon"><GiftIcon /></div>
-          <div className="gift-body">
-            <div className="gift-title">Sarah's Birthday — June 3rd</div>
-            <div className="gift-sub">10 days away · Last year: Le Labo candle + Aesop skincare · Budget ~$120</div>
-            <button className="gift-btn">Order Gift Now</button>
+        {!connected && !loading && (
+          <div className="special-empty">
+            <CalendarIcon />
+            <p>Connect Google Calendar to surface upcoming birthdays and anniversaries.</p>
           </div>
-        </div>
+        )}
+
+        {connected && loading && (
+          <div className="special-empty">
+            <p style={{ fontStyle: 'italic' }}>Checking calendar…</p>
+          </div>
+        )}
+
+        {connected && !loading && specialEvents.length === 0 && (
+          <div className="special-empty">
+            <CalendarIcon />
+            <p>No birthdays or anniversaries in the next 2 weeks.</p>
+          </div>
+        )}
+
+        {connected && specialEvents.map(e => (
+          <SpecialEventCard key={e.id} event={e} />
+        ))}
       </div>
 
       <div className="sec-hdr">
         <span className="sec-title">Upcoming</span>
       </div>
       <div className="card">
-        {REMINDERS.map((r, i) => (
-          <div key={r.task} className="todo-item" style={r.last ? { borderBottom: 'none' } : {}}>
-            <div className="t-body">
-              <div className="t-task">{r.task}</div>
-              <div className="t-meta">
-                <span className="t-due">{r.meta}</span>
-                <span className={`t-pri ${r.priClass}`}>{r.pri}</span>
-              </div>
-            </div>
+        {!connected && !loading && (
+          <div className="special-empty">
+            <CalendarIcon />
+            <p>Connect Google Calendar to see upcoming appointments, flights, and events.</p>
           </div>
+        )}
+
+        {connected && loading && (
+          <div className="special-empty">
+            <p style={{ fontStyle: 'italic' }}>Checking calendar…</p>
+          </div>
+        )}
+
+        {connected && !loading && upcomingEvents.length === 0 && (
+          <div className="special-empty">
+            <CalendarIcon />
+            <p>No upcoming appointments, trips, or full-day events in the next 2 weeks.</p>
+          </div>
+        )}
+
+        {connected && !loading && upcomingEvents.map((e, i) => (
+          <UpcomingItem
+            key={e.id}
+            event={e}
+            last={i === upcomingEvents.length - 1}
+          />
         ))}
       </div>
     </>

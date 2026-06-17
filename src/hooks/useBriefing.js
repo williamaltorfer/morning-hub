@@ -117,8 +117,8 @@ export default function useBriefing({ events, connected }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model:      'claude-sonnet-4-6',
-          max_tokens: 1000,
-          system:     buildSystemPrompt(context),
+          max_tokens: 700,
+          system:     [{ type: 'text', text: buildSystemPrompt(context), cache_control: { type: 'ephemeral' } }],
           messages:   [{ role: 'user', content: userMessage }],
         }),
       })
