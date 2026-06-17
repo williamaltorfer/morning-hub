@@ -61,6 +61,15 @@ body {
 .w-hour .wh-icon { display:flex; justify-content:center; margin-bottom:5px; }
 .w-hour .wh-temp { font-family:var(--serif); font-size:13px; }
 
+.weather-card--loading {
+  height: 148px;
+  animation: weather-pulse 1.6s ease-in-out infinite;
+}
+@keyframes weather-pulse {
+  0%, 100% { opacity: .7; }
+  50%       { opacity: .4; }
+}
+
 /* ── Day summary bar ── */
 .day-summary-bar {
   background:rgba(245,241,235,0.65);

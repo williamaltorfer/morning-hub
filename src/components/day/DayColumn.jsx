@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import useWeather from '../../hooks/useWeather'
+
+const S = 'rgba(255,255,255,.85)'
 
 function SunIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={S} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="4"/>
       <line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/>
       <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
@@ -14,7 +17,7 @@ function SunIcon() {
 
 function CloudIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={S} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
     </svg>
   )
@@ -22,20 +25,49 @@ function CloudIcon() {
 
 function MoonIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={S} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
     </svg>
   )
 }
 
-const HOURLY = [
-  { time: 'Now',  icon: <SunIcon />,   temp: '62°' },
-  { time: '9am',  icon: <SunIcon />,   temp: '65°' },
-  { time: '11am', icon: <SunIcon />,   temp: '68°' },
-  { time: '2pm',  icon: <CloudIcon />, temp: '71°' },
-  { time: '5pm',  icon: <CloudIcon />, temp: '68°' },
-  { time: '7pm',  icon: <MoonIcon />,  temp: '62°' },
-]
+function RainIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={S} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="16" y1="13" x2="16" y2="21"/><line x1="8" y1="13" x2="8" y2="21"/><line x1="12" y1="15" x2="12" y2="23"/>
+      <path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/>
+    </svg>
+  )
+}
+
+function SnowIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={S} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="2" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+      <line x1="2" y1="12" x2="22" y2="12"/><line x1="19.07" y1="4.93" x2="4.93" y2="19.07"/>
+    </svg>
+  )
+}
+
+function ThunderIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={S} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  )
+}
+
+function WeatherIcon({ type }) {
+  switch (type) {
+    case 'sun':     return <SunIcon />
+    case 'cloud':   return <CloudIcon />
+    case 'moon':    return <MoonIcon />
+    case 'rain':    return <RainIcon />
+    case 'snow':    return <SnowIcon />
+    case 'thunder': return <ThunderIcon />
+    default:        return <SunIcon />
+  }
+}
 
 function AlertIcon() {
   return (
@@ -150,6 +182,54 @@ function MeetingItem({ meeting }) {
   )
 }
 
+function WeatherCard() {
+  const { loading, error, data } = useWeather()
+
+  if (loading) {
+    return <div className="weather-card weather-card--loading" aria-busy="true" />
+  }
+
+  if (error || !data) {
+    return (
+      <div className="weather-card">
+        <div className="weather-top">
+          <div className="w-right" style={{ padding: '20px' }}>
+            <div className="w-condition">Weather unavailable</div>
+            <div className="w-loc">Chicago · Lincoln Park</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="weather-card">
+      <div className="weather-top">
+        <div className="w-temp">{data.temp}<sup>°</sup></div>
+        <div className="w-right">
+          <div className="w-condition">{data.condition}</div>
+          <div className="w-loc">{data.location}</div>
+        </div>
+      </div>
+      <div className="w-stats">
+        <span>H {data.high}°</span>
+        <span>L {data.low}°</span>
+        <span>Wind {data.wind} mph</span>
+        <span>Rain {data.rain}%</span>
+      </div>
+      <div className="w-hourly">
+        {data.hourly.map(h => (
+          <div key={h.label} className="w-hour">
+            <div className="wh-time">{h.label}</div>
+            <div className="wh-icon"><WeatherIcon type={h.iconType} /></div>
+            <div className="wh-temp">{h.temp}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function DayColumn() {
   return (
     <>
@@ -158,27 +238,7 @@ export default function DayColumn() {
         <span className="sec-action">+ Add</span>
       </div>
 
-      <div className="weather-card">
-        <div className="weather-top">
-          <div className="w-temp">62<sup>°</sup></div>
-          <div className="w-right">
-            <div className="w-condition">Partly Cloudy</div>
-            <div className="w-loc">Chicago · Lincoln Park</div>
-          </div>
-        </div>
-        <div className="w-stats">
-          <span>H 71°</span><span>L 54°</span><span>Wind 12 mph</span><span>Rain 20%</span>
-        </div>
-        <div className="w-hourly">
-          {HOURLY.map(h => (
-            <div key={h.time} className="w-hour">
-              <div className="wh-time">{h.time}</div>
-              <div className="wh-icon">{h.icon}</div>
-              <div className="wh-temp">{h.temp}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <WeatherCard />
 
       <div className="sec-hdr"><span className="sec-title">Today's Schedule</span><span className="sec-action">+ Add</span></div>
       <div className="day-summary-bar">5 events · Cubs game tonight at 7:05 · Busiest window 9–11am</div>
