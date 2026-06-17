@@ -36,16 +36,22 @@ function cacheSuggestions(items) {
   } catch {}
 }
 
-function loadGoals() {
+function loadContext() {
   try {
     const raw = localStorage.getItem('morning_hub_context')
-    return raw ? (JSON.parse(raw)?.goals ?? []) : []
+    return raw ? JSON.parse(raw) : {}
+  } catch { return {} }
+}
+
+function loadGoals() {
+  try {
+    return loadContext()?.goals ?? []
   } catch { return [] }
 }
 
 // ── Claude prompt for task suggestions ──────────────────────
 
-function buildSuggestionPrompt(activeGoals, existingTasks) {
+function buildSuggestionPrompt(activeGoals, existingTasks, context = {}) {
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric',
   })
@@ -66,7 +72,15 @@ function buildSuggestionPrompt(activeGoals, existingTasks) {
         .join('\n')
     : '(none yet)'
 
-  const system = `You are a goal alignment assistant for a personal productivity hub. Given the user's active goals and their existing task list, generate specific, actionable next steps that will advance each goal.
+  const ctx = context?.context ?? {}
+  const contextSections = [
+    ctx.role        && `ROLE & FOCUS:\n${ctx.role}`,
+    ctx.projects    && `ACTIVE PROJECTS (use these to generate specific, grounded tasks — match projects to the most relevant goal):\n${ctx.projects}`,
+    ctx.people      && `KEY PEOPLE:\n${ctx.people}`,
+    ctx.constraints && `WORKING CONSTRAINTS:\n${ctx.constraints}`,
+  ].filter(Boolean).join('\n\n')
+
+  const system = `You are a goal alignment assistant for a personal productivity hub. Given the user's active goals, context, and existing task list, generate specific, actionable next steps that will advance each goal.
 
 CRITICAL RULE — horizon means WHEN TO DO IT, not the goal's timeframe:
 - "weekly"    = do it this week (the primary horizon for most tasks)
@@ -83,6 +97,7 @@ Additional rules:
 - Do NOT repeat or closely paraphrase anything already in the existing task list
 - Work backward from the success metric when one is set
 - Prefer weekly horizon — only use monthly/quarterly when the task is genuinely that large
+- Use the user's active projects and context to make tasks specific and grounded, not generic
 
 Today is ${today}.
 
@@ -101,7 +116,11 @@ Return ONLY valid JSON, no preamble, no markdown fences:
   ]
 }`
 
-  const user = `ACTIVE GOALS:\n${goalsText}\n\nEXISTING TASKS (do not duplicate):\n${existingText}`
+  const user = [
+    `ACTIVE GOALS:\n${goalsText}`,
+    contextSections && `\n${contextSections}`,
+    `\nEXISTING TASKS (do not duplicate):\n${existingText}`,
+  ].filter(Boolean).join('\n')
 
   return { system, user }
 }
@@ -184,7 +203,8 @@ export default function useTasks() {
     setGenerateError(null)
     setSuggestions([])
     try {
-      const { system, user } = buildSuggestionPrompt(active, tasksRef.current)
+      const context = loadContext()
+      const { system, user } = buildSuggestionPrompt(active, tasksRef.current, context)
       const resp = await fetch('/api/briefing', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -195,7 +215,10 @@ export default function useTasks() {
           messages:   [{ role: 'user', content: user }],
         }),
       })
-      if (!resp.ok) throw new Error(`API ${resp.status}`)
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}))
+        throw new Error(errBody?.error?.message || `API ${resp.status}`)
+      }
       const data    = await resp.json()
       const raw     = data.content?.[0]?.text ?? ''
       const clean   = raw.replace(/```json|```/g, '').trim()
