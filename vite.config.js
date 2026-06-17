@@ -1,13 +1,17 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
-  plugins: [react(), devBriefingProxy()],
+export default defineConfig(({ mode }) => {
+  // Load ALL .env vars (not just VITE_ prefixed) so the dev middleware
+  // can access ANTHROPIC_API_KEY without exposing it to the browser bundle.
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [react(), devBriefingProxy(env)],
+  }
 })
 
-// Proxies /api/briefing to Anthropic during local dev (npm run dev).
-// In production, Vercel routes this to api/briefing.js.
-function devBriefingProxy() {
+function devBriefingProxy(env) {
   return {
     name: 'dev-briefing-proxy',
     configureServer(server) {
@@ -27,7 +31,7 @@ function devBriefingProxy() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-api-key': process.env.ANTHROPIC_API_KEY,
+              'x-api-key': env.ANTHROPIC_API_KEY,
               'anthropic-version': '2023-06-01',
             },
             body: JSON.stringify(body),
