@@ -441,7 +441,7 @@ export default function TasksSection() {
   }, [setActiveScopeTab])
 
   const handleGoalSelect = useCallback((id) => {
-    setSelectedGoalId(prev => prev === id ? null : id)
+    setSelectedGoalId(id)
     setShowAddForm(false)
   }, [])
 
@@ -491,20 +491,20 @@ export default function TasksSection() {
         </span>
       </div>
 
-      {/* Goal filter pills */}
+      {/* Goal filter dropdown */}
       {goalsWithTasks.length > 0 && (
-        <div className="goal-pills">
+        <select
+          className="goal-filter-select"
+          value={selectedGoalId ?? ''}
+          onChange={e => handleGoalSelect(e.target.value || null)}
+        >
+          <option value="">All goals</option>
           {goalsWithTasks.map(g => (
-            <button
-              key={g.id}
-              className={`goal-pill${selectedGoalId === g.id ? ' active' : ''}`}
-              onClick={() => handleGoalSelect(g.id)}
-              title={g.title}
-            >
-              {g.title}
-            </button>
+            <option key={g.id} value={g.id}>
+              {g.horizon.charAt(0).toUpperCase() + g.horizon.slice(1)}: {g.title}
+            </option>
           ))}
-        </div>
+        </select>
       )}
 
       {/* Scope tabs — hidden when a goal is selected */}
