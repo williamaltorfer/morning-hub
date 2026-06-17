@@ -66,16 +66,23 @@ function buildSuggestionPrompt(activeGoals, existingTasks) {
         .join('\n')
     : '(none yet)'
 
-  const system = `You are a goal alignment assistant for a personal productivity hub. Given the user's active goals and their existing task list, generate specific, actionable next steps that will advance each goal within its time horizon.
+  const system = `You are a goal alignment assistant for a personal productivity hub. Given the user's active goals and their existing task list, generate specific, actionable next steps that will advance each goal.
 
-Rules:
-- 2–3 suggestions per active goal, prioritized by impact
-- Tasks must be concrete and completable within the goal's horizon
+CRITICAL RULE — horizon means WHEN TO DO IT, not the goal's timeframe:
+- "weekly"    = do it this week (the primary horizon for most tasks)
+- "monthly"   = a genuine multi-week milestone, not completable this week
+- "quarterly" = a major phase deliverable, not completable this month
+
+Mapping by goal horizon:
+- Quarterly goals → 1–2 monthly milestones + 1–2 weekly next-steps (mix of horizons)
+- Monthly goals   → 2–3 weekly tasks (what to do THIS WEEK to advance the goal)
+- Weekly goals    → 2–3 weekly tasks with suggestedDue = this week
+
+Additional rules:
+- Tasks must be concrete and completable within their stated horizon
 - Do NOT repeat or closely paraphrase anything already in the existing task list
-- For quarterly goals: milestone-level tasks (multi-week chunks)
-- For monthly goals: project-chunk tasks (completable in 1–5 days)
-- For weekly goals: specific daily actions (completable today or this week)
 - Work backward from the success metric when one is set
+- Prefer weekly horizon — only use monthly/quarterly when the task is genuinely that large
 
 Today is ${today}.
 
@@ -102,9 +109,10 @@ Return ONLY valid JSON, no preamble, no markdown fences:
 // ── Hook ─────────────────────────────────────────────────────
 
 export default function useTasks() {
-  const [tasks,       setTasks]       = useState(loadTasks)
-  const [suggestions, setSuggestions] = useState(() => loadCachedSuggestions() ?? [])
-  const [generating,  setGenerating]  = useState(false)
+  const [tasks,           setTasks]       = useState(loadTasks)
+  const [suggestions,     setSuggestions] = useState(() => loadCachedSuggestions() ?? [])
+  const [generating,      setGenerating]  = useState(false)
+  const [generateError,   setGenerateError] = useState(null)
 
   const tasksRef = useRef(tasks)
   useEffect(() => { tasksRef.current = tasks }, [tasks])
@@ -173,6 +181,7 @@ export default function useTasks() {
     if (!active.length) return
 
     setGenerating(true)
+    setGenerateError(null)
     setSuggestions([])
     try {
       const { system, user } = buildSuggestionPrompt(active, tasksRef.current)
@@ -181,7 +190,7 @@ export default function useTasks() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model:      'claude-haiku-4-5-20251001',
-          max_tokens: 800,
+          max_tokens: 2000,
           system,
           messages:   [{ role: 'user', content: user }],
         }),
@@ -196,6 +205,7 @@ export default function useTasks() {
       cacheSuggestions(withIds)
     } catch (err) {
       console.error('Task suggestion generation failed:', err)
+      setGenerateError(err.message || 'Failed to generate suggestions. Check your API key and try again.')
     } finally {
       setGenerating(false)
     }
@@ -216,6 +226,7 @@ export default function useTasks() {
     tasks,
     suggestions,
     generating,
+    generateError,
     addTask,
     updateTask,
     deleteTask,

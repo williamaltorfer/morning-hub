@@ -50,6 +50,8 @@ function isToday(dateStr) {
   return due.toDateString() === today.toDateString()
 }
 
+const VALID_HORIZONS = new Set(['weekly', 'monthly', 'quarterly'])
+
 function filterTasksByScope(tasks, scope) {
   switch (scope) {
     case 'today':
@@ -59,6 +61,11 @@ function filterTasksByScope(tasks, scope) {
         (!t.done && t.dueDate && isOverdue(t.dueDate))
       )
     case 'weekly':
+      // Include tasks explicitly tagged weekly, plus any with an unrecognized horizon
+      return tasks.filter(t =>
+        t.horizon === 'weekly' ||
+        (t.horizon && !VALID_HORIZONS.has(t.horizon))
+      )
     case 'monthly':
     case 'quarterly':
       return tasks.filter(t => t.horizon === scope)
@@ -304,7 +311,7 @@ function GoalGroup({ goalKey, goalTitle, tasks, suggestions, onToggle, onDelete,
 export default function TasksSection() {
   const { activeScopeTab, setActiveScopeTab } = useHub()
   const {
-    tasks, suggestions, generating,
+    tasks, suggestions, generating, generateError,
     addTask, toggleDone, deleteTask,
     acceptSuggestion, dismissSuggestion, generateSuggestions,
   } = useTasks()
@@ -390,14 +397,21 @@ export default function TasksSection() {
       </div>
 
       {activeScopeTab !== 'today' && (
-        <button
-          className="task-generate-btn"
-          onClick={generating ? undefined : generateSuggestions}
-          disabled={generating}
-        >
-          <RefreshIcon />
-          {generating ? 'Generating suggestions…' : 'Refresh Suggestions'}
-        </button>
+        <>
+          <button
+            className="task-generate-btn"
+            onClick={generating ? undefined : generateSuggestions}
+            disabled={generating}
+          >
+            <RefreshIcon />
+            {generating ? 'Generating suggestions…' : 'Refresh Suggestions'}
+          </button>
+          {generateError && (
+            <p style={{ fontSize: 12, color: 'var(--terra)', marginTop: 6, textAlign: 'center' }}>
+              {generateError}
+            </p>
+          )}
+        </>
       )}
     </>
   )
