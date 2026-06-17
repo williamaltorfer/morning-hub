@@ -22,7 +22,7 @@ function MicIcon({ color = '#fff' }) {
 }
 
 export default function Header() {
-  const { openSettings, briefing } = useHub()
+  const { openSettings, briefing, voice } = useHub()
   const greeting = briefing.briefing?.greeting ?? (briefing.loading ? '' : 'You have a full day ahead — let\'s make it count.')
   const [dateStr, setDateStr] = useState('')
   const [timeStr, setTimeStr] = useState('')
@@ -58,9 +58,15 @@ export default function Header() {
         <button className="settings-btn" onClick={openSettings} title="Goals & Context">
           <GearIcon />
         </button>
-        <button className="dh-voice-btn">
-          <MicIcon />
-        </button>
+        {voice.supported && (
+          <button
+            className={`dh-voice-btn${voice.voiceState === 'listening' ? ' listening' : ''}`}
+            onClick={voice.voiceState !== 'idle' ? voice.dismiss : voice.start}
+            title="Ask anything"
+          >
+            <MicIcon />
+          </button>
+        )}
       </div>
     </header>
   )

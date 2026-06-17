@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { loadTasksForBriefing } from './useTasks'
 
 const CONTEXT_KEY = 'morning_hub_context'
 
@@ -12,37 +13,37 @@ function loadContext() {
 function buildSystemPrompt(context) {
   const goals = context?.goals?.length
     ? context.goals
-        .map(g => `${(g.horizon || 'goal').toUpperCase()}: ${g.title} — ${g.status || 'active'}${g.deadline ? `, deadline ${g.deadline}` : ''}`)
+        .map(g => `${(g.horizon || 'goal').toUpperCase()}: ${g.title} — ${g.status || 'active'}${g.deadline ? `, deadline ${g.deadline}` : ''}${g.metric ? `, success metric: ${g.metric}` : ''}`)
         .join('\n')
     : '(No goals configured yet — user will add these in Settings)'
-
-  const projects = context?.projects?.length
-    ? context.projects
-        .map(p => `${p.name} → goal: ${p.goal_refs?.[0] || 'unlinked'}, ${(p.alignment_type || 'direct').toUpperCase()}, health: ${p.health || 'green'}`)
-        .join('\n')
-    : '(No projects configured yet)'
 
   const flags = context?.flags?.length
     ? context.flags.join(', ')
     : 'deadline_conflicts, unprepped_client_meetings, missing_agendas, personal_dates_approaching, at_risk_goal_tasks'
 
-  const constraints = context?.constraints
-    ? `deep_work_before: ${context.constraints.deep_work_before || '10:00'}, location: ${context.constraints.location || 'Chicago'}`
-    : 'deep_work_before: 10:00, location: Chicago'
+  // Free-form context fields from the Settings > Context tab
+  const ctx = context?.context ?? {}
+  const freeformSections = [
+    ctx.role        && `ROLE & FOCUS:\n${ctx.role}`,
+    ctx.projects    && `ACTIVE PROJECTS:\n${ctx.projects}`,
+    ctx.people      && `KEY PEOPLE:\n${ctx.people}`,
+    ctx.constraints && `WORKING CONSTRAINTS:\n${ctx.constraints}`,
+  ].filter(Boolean)
 
-  return `You are the intelligence layer of a personal morning briefing hub. Read the user's goals, projects, and today's schedule, then return a structured JSON prioritization of every calendar event — ranked by how directly each one advances the user's active goals.
+  const briefingTone = context?.preferences?.briefing_tone ?? 'concise'
+  const toneNote = briefingTone === 'warm'     ? 'Write with warmth and encouragement.'
+                 : briefingTone === 'detailed' ? 'Be thorough and include context for each item.'
+                 :                               'Be concise and direct — one sentence per point.'
+
+  return `You are the intelligence layer of a personal morning briefing hub. Read the user's goals and today's schedule, then return a structured JSON prioritization of every calendar event — ranked by how directly each one advances the user's active goals.
+
+TONE: ${toneNote}
 
 GOALS (source of truth — everything is weighed against these):
 ${goals}
 
-ACTIVE PROJECTS (with goal alignment):
-${projects}
-
-FLAG RULES (always surface these conditions regardless of priority score):
+${freeformSections.length ? freeformSections.join('\n\n') + '\n\n' : ''}FLAG RULES (always surface these conditions regardless of priority score):
 ${flags}
-
-CONSTRAINTS:
-${constraints}
 
 PRIORITIZATION RULES:
 1. Items directly advancing an active goal → priority_score 75–100, goal_alignment: "direct"
@@ -107,7 +108,7 @@ export default function useBriefing({ events, connected }) {
       eventsToText(currentEvents),
       '',
       "Today's tasks:",
-      '(none yet — tasks will be configured in Settings)',
+      loadTasksForBriefing(),
     ].join('\n')
 
     try {

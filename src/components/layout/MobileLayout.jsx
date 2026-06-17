@@ -67,7 +67,7 @@ const NAV_TABS = [
 ]
 
 export default function MobileLayout() {
-  const { openSettings } = useHub()
+  const { openSettings, voice } = useHub()
   const [activeTab, setActiveTab] = useState('day')
   const [mini, setMini] = useState(false)
   const scrollRef = useRef(null)
@@ -130,11 +130,19 @@ export default function MobileLayout() {
               <button className="settings-btn" onClick={openSettings} style={{ width: 28, height: 28 }} title="Settings">
                 <GearIcon />
               </button>
-              <button className="mini-voice-btn"><MicIcon /></button>
+              {voice.supported && (
+                <button
+                  className={`mini-voice-btn${voice.voiceState === 'listening' ? ' listening' : ''}`}
+                  onClick={voice.voiceState !== 'idle' ? voice.dismiss : voice.start}
+                  aria-label="Voice"
+                >
+                  <MicIcon />
+                </button>
+              )}
             </div>
           </div>
         </header>
-        <VoiceBar hidden={mini} />
+        <VoiceBar hidden={mini && voice.voiceState === 'idle'} />
       </div>
 
       <div className="scroll-area" ref={scrollRef} onScroll={handleScroll}>

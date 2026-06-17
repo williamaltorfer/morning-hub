@@ -1,9 +1,28 @@
 import { useEffect, useState } from 'react'
 
-const LAT      = 41.9203
-const LON      = -87.6349
-const TIMEZONE = 'America/Chicago'
-const LOCATION = 'Chicago · Lincoln Park'
+const DEFAULTS = {
+  lat:      41.9203,
+  lon:     -87.6349,
+  timezone: 'America/Chicago',
+  location: 'Chicago · Lincoln Park',
+}
+
+function loadLocationPrefs() {
+  try {
+    const raw = localStorage.getItem('morning_hub_context')
+    if (!raw) return DEFAULTS
+    const prefs = JSON.parse(raw)?.preferences
+    if (prefs?.locationLat && prefs?.locationLon) {
+      return {
+        lat:      prefs.locationLat,
+        lon:      prefs.locationLon,
+        timezone: 'America/Chicago',
+        location: prefs.location || DEFAULTS.location,
+      }
+    }
+  } catch {}
+  return DEFAULTS
+}
 
 const WMO_LABEL = {
   0: 'Clear', 1: 'Mostly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
@@ -44,14 +63,15 @@ export default function useWeather() {
   const [state, setState] = useState({ loading: true, error: null, data: null })
 
   useEffect(() => {
+    const loc = loadLocationPrefs()
     const url = [
       'https://api.open-meteo.com/v1/forecast',
-      `?latitude=${LAT}&longitude=${LON}`,
+      `?latitude=${loc.lat}&longitude=${loc.lon}`,
       '&current=temperature_2m,weathercode,windspeed_10m',
       '&hourly=temperature_2m,weathercode,precipitation_probability',
       '&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max',
       '&temperature_unit=fahrenheit&wind_speed_unit=mph',
-      `&timezone=${encodeURIComponent(TIMEZONE)}&forecast_days=1`,
+      `&timezone=${encodeURIComponent(loc.timezone)}&forecast_days=1`,
     ].join('')
 
     fetch(url)
@@ -61,18 +81,18 @@ export default function useWeather() {
         const hourly = json.hourly
         const daily  = json.daily
 
-        const nowIso   = cur.time
-        const nowHour  = new Date(nowIso).getHours()
         const allTimes = hourly.time
 
-        // Find the index of the current hour in the hourly array
-        const startIdx = allTimes.findIndex(t => t === nowIso) ?? nowHour
+        // cur.time is "YYYY-MM-DDTHH:mm" (15-min interval), hourly is on the hour.
+        // Slice the hour digits directly — avoids JS timezone parsing pitfalls.
+        const nowHour  = parseInt(cur.time.slice(11, 13), 10)
+        const startIdx = nowHour  // hourly array is 0–23 indexed by hour-of-day
 
         // Pick 6 slots: current + every 2 hours
         const slots = []
         for (let i = 0; i < 6; i++) {
           const idx = Math.min(startIdx + i * 2, allTimes.length - 1)
-          const slotHour = new Date(allTimes[idx]).getHours()
+          const slotHour = parseInt(allTimes[idx].slice(11, 13), 10)
           slots.push({
             label:    i === 0 ? 'Now' : formatHour(allTimes[idx]),
             iconType: wmoIcon(hourly.weathercode[idx], slotHour),
@@ -89,7 +109,7 @@ export default function useWeather() {
             temp:      Math.round(cur.temperature_2m),
             condition: label(cur.weathercode),
             iconType:  wmoIcon(cur.weathercode, nowHour),
-            location:  LOCATION,
+            location:  loc.location,
             high:      Math.round(daily.temperature_2m_max[0]),
             low:       Math.round(daily.temperature_2m_min[0]),
             wind:      Math.round(cur.windspeed_10m),

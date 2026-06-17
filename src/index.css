@@ -184,6 +184,35 @@ body {
 .pri-med { background:var(--sage-bg);  color:var(--sage);  }
 .pri-lo  { background:rgba(140,136,128,.1); color:var(--stone); }
 
+/* ── Task extras ── */
+.task-done { opacity: .55; }
+.task-delete-btn { opacity: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: var(--stone-light); cursor: pointer; flex-shrink: 0; transition: opacity .15s, color .15s; }
+.todo-item:hover .task-delete-btn { opacity: 1; }
+.task-delete-btn:hover { color: var(--terra); }
+
+/* Add task form */
+.task-add-form { background: rgba(255,255,255,0.65); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(181,98,42,0.2); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+.task-form-row { display: flex; gap: 8px; }
+.task-form-select { flex: 1; resize: none; min-height: unset; }
+.task-form-actions { display: flex; gap: 6px; justify-content: flex-end; padding-top: 4px; }
+.tasks-empty { padding: 20px; font-size: 12px; color: var(--stone-light); text-align: center; font-style: italic; font-family: var(--serif); }
+
+/* Suggestion items */
+.suggestions-block { padding: 8px 12px 4px; border-top: 1px dashed rgba(74,92,69,0.2); margin-top: 4px; }
+.suggestion-item { background: rgba(74,92,69,0.06); border: 1px dashed rgba(74,92,69,0.22); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+.suggestion-top { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+.suggestion-badge { font-size: 8px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--sage); display: flex; align-items: center; gap: 4px; }
+.suggestion-title { font-size: 12px; font-weight: 400; color: var(--charcoal); line-height: 1.4; cursor: pointer; }
+.suggestion-title:hover { color: var(--sage); }
+.suggestion-rationale { font-size: 11px; color: var(--stone); font-style: italic; margin-bottom: 8px; line-height: 1.5; }
+.suggestion-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.suggestion-actions { display: flex; gap: 6px; }
+
+/* Refresh suggestions button */
+.task-generate-btn { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; padding: 10px; border: 1px dashed rgba(74,92,69,0.28); border-radius: 10px; background: transparent; color: var(--sage); font-family: var(--sans); font-size: 9px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; transition: all .18s; margin-top: 10px; }
+.task-generate-btn:hover { border-color: var(--sage); background: rgba(74,92,69,0.06); }
+.task-generate-btn:disabled { opacity: .55; cursor: default; }
+
 /* ── Meals ── */
 .meal-row { display:flex; align-items:stretch; border-bottom:1px solid var(--border); }
 .meal-row:last-child { border-bottom:none; }
@@ -238,6 +267,10 @@ body {
 .voice-btn  { width:32px; height:32px; background:var(--terra); border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:transform .18s, background .18s; }
 .voice-btn:hover  { background:var(--terra-light); }
 .voice-btn:active { transform:scale(.9); }
+.voice-btn.listening { background:var(--terra-light); animation:voice-pulse 1.4s ease-in-out infinite; }
+.dh-voice-btn.listening { background:var(--terra-light); animation:voice-pulse 1.4s ease-in-out infinite; }
+.mini-voice-btn.listening { background:var(--terra-light); animation:voice-pulse 1.4s ease-in-out infinite; }
+@keyframes voice-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(181,98,42,0.4)} 50%{box-shadow:0 0 0 8px rgba(181,98,42,0)} }
 .voice-text { flex:1; font-size:11px; font-weight:300; letter-spacing:.05em; color:var(--stone-light); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .voice-text span { color:#fff; font-weight:400; }
 .voice-wave { display:flex; align-items:center; gap:2px; height:18px; flex-shrink:0; }
@@ -487,6 +520,13 @@ body {
 .add-goal-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 10px; border: 1px dashed rgba(140,136,128,0.30); border-radius: 10px; background: transparent; color: var(--stone); font-family: var(--sans); font-size: 9px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; transition: all .18s; }
 .add-goal-btn:hover { border-color: var(--terra); color: var(--terra); background: rgba(181,98,42,0.04); }
 
+/* Goal form (inline add/edit) */
+.goal-form { background: rgba(255,255,255,0.65); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(181,98,42,0.2); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+.goal-form-row { display: flex; gap: 8px; }
+.goal-form-select { flex: 1; resize: none; min-height: unset; }
+.goal-form-actions { display: flex; gap: 6px; justify-content: flex-end; padding-top: 6px; }
+.goal-action-btn:disabled { opacity: .45; cursor: default; }
+
 /* Context */
 .context-intro { font-family: var(--serif); font-size: 14px; font-style: italic; color: var(--stone); line-height: 1.65; margin-bottom: 20px; }
 .context-field-label { font-size: 8px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--stone); margin-bottom: 8px; margin-top: 20px; display: block; }
@@ -499,6 +539,11 @@ body {
 .context-tag .tag-x { color: var(--stone-light); font-size: 10px; line-height: 1; }
 .context-tag:hover .tag-x { color: var(--terra); }
 .context-hint { font-size: 10px; color: var(--stone-light); letter-spacing: .02em; line-height: 1.5; margin-top: 6px; }
+.context-hint.hint-ok { color: var(--sage); }
+.flag-add-row { display: flex; gap: 8px; margin-top: 8px; }
+.flag-add-input { flex: 1; resize: none; min-height: unset; }
+.pref-row { display: flex; gap: 8px; align-items: center; }
+.sp-save-btn:disabled { opacity: .65; cursor: default; }
 
 /* SP Footer */
 .sp-footer { flex-shrink: 0; padding: 16px 28px calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid rgba(140,136,128,0.14); background: rgba(255,255,255,0.30); display: flex; gap: 10px; }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useHub } from '../../context/HubContext'
 
 function MicIcon() {
   return (
@@ -11,32 +11,63 @@ function MicIcon() {
   )
 }
 
-export default function VoiceBar({ hidden = false }) {
-  const [listening, setListening] = useState(false)
+function StopIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  )
+}
 
-  function activate() {
-    setListening(true)
-    setTimeout(() => setListening(false), 2500)
+function WaveAnim() {
+  return (
+    <div className="voice-wave">
+      <i/><i/><i/><i/><i/><i/><i/>
+    </div>
+  )
+}
+
+export default function VoiceBar({ hidden = false }) {
+  const { voice } = useHub()
+  const { voiceState, transcript, response, start, dismiss, supported } = voice
+
+  if (!supported) return null
+
+  const isActive = voiceState !== 'idle'
+  const showWave = voiceState === 'listening' || voiceState === 'speaking'
+
+  function handleBtn() {
+    if (isActive) dismiss()
+    else start()
   }
 
   return (
     <div className={`voice-bar${hidden ? ' hidden' : ''}`}>
       <button
-        className="voice-btn"
-        onClick={activate}
-        style={listening ? { background: 'var(--terra-light)' } : {}}
+        className={`voice-btn${voiceState === 'listening' ? ' listening' : ''}`}
+        onClick={handleBtn}
+        aria-label={isActive ? 'Stop' : 'Start voice'}
       >
-        <MicIcon />
+        {isActive ? <StopIcon /> : <MicIcon />}
       </button>
+
       <div className="voice-text">
-        {listening
-          ? <span>Listening…</span>
-          : <>Ask anything — <span>"What do I need to prep for my 10am?"</span> · <span>"Order Sarah a birthday gift"</span> · <span>"Add milk to my grocery list"</span></>
-        }
+        {voiceState === 'idle' && (
+          <>Ask anything — <span>"What do I need to prep for my 10am?"</span> · <span>"What should I focus on?"</span></>
+        )}
+        {voiceState === 'listening' && (
+          <span>{transcript || 'Listening…'}</span>
+        )}
+        {voiceState === 'processing' && (
+          <span>Processing…</span>
+        )}
+        {(voiceState === 'speaking' || voiceState === 'error') && (
+          <span style={voiceState === 'error' ? { color: 'var(--terra)' } : {}}>{response}</span>
+        )}
       </div>
-      <div className="voice-wave">
-        <i/><i/><i/><i/><i/><i/><i/>
-      </div>
+
+      {showWave && <WaveAnim />}
     </div>
   )
 }
