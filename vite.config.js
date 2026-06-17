@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [react(), devBriefingProxy(env)],
+    plugins: [react(), devBriefingProxy(env), devNewsProxy(env)],
   }
 })
 
@@ -37,6 +37,37 @@ function devBriefingProxy(env) {
             body: JSON.stringify(body),
           })
 
+          const data = await upstream.json()
+          res.setHeader('Content-Type', 'application/json')
+          res.statusCode = upstream.status
+          res.end(JSON.stringify(data))
+        } catch (err) {
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: err.message }))
+        }
+      })
+    },
+  }
+}
+
+function devNewsProxy(env) {
+  return {
+    name: 'dev-news-proxy',
+    configureServer(server) {
+      server.middlewares.use('/api/news', async (req, res) => {
+        const feedUrl = new URL(req.url, 'http://localhost').searchParams.get('url')
+        if (!feedUrl) {
+          res.statusCode = 400
+          res.end(JSON.stringify({ error: 'Missing url param' }))
+          return
+        }
+
+        const key    = env.RSS2JSON_API_KEY
+        const params = new URLSearchParams({ rss_url: feedUrl, count: '10' })
+        if (key) params.set('api_key', key)
+
+        try {
+          const upstream = await fetch(`https://api.rss2json.com/v1/api.json?${params}`)
           const data = await upstream.json()
           res.setHeader('Content-Type', 'application/json')
           res.statusCode = upstream.status

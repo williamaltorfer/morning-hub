@@ -1,17 +1,60 @@
 import { useHub } from '../../context/HubContext'
+import useNews from '../../hooks/useNews'
 
-const TOPICS = ['All', 'AI', 'Perf Mktg', 'Economy', 'Chicago', '+ Follow']
+const TOPICS = ['All', 'AI', 'Perf Mktg', 'Economy', 'Chicago']
 
-const NEWS = [
-  { source: 'The Information · AI',  age: '2h ago', headline: "Google DeepMind's reasoning model outperforms GPT-4o on ad optimization tasks", snippet: 'Implications for automated bidding and creative testing pipelines...' },
-  { source: 'Ad Age · Performance',  age: '4h ago', headline: 'Meta Advantage+ now accounts for 38% of spend among top 500 US advertisers', snippet: 'AI-native campaign structures raising new questions about creative control...' },
-  { source: 'WSJ · Economy',         age: '6h ago', headline: 'Fed minutes signal two rate cuts possible in H2 as inflation cools to 2.8%', snippet: 'Markets responded positively to signs the tightening cycle may be ending...' },
-  { source: 'Chicago Tribune',       age: '1h ago', headline: 'Cubs bullpen ranked 3rd in MLB after dominant May; Wrigley sellout tonight', snippet: 'Classic Wrigley atmosphere expected as the division rivalry heats up...' },
-  { source: 'Marketing Brew · AI',   age: '3h ago', headline: 'How leading agencies are structuring AI workflows for creative attribution', snippet: 'The hybrid model blending generative tools with first-party signal analysis...' },
-]
+function ExternalLinkIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: .4, flexShrink: 0 }}>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+  )
+}
+
+function NewsItem({ item }) {
+  return (
+    <div
+      className="news-item"
+      onClick={() => item.url && window.open(item.url, '_blank', 'noopener')}
+      role="link"
+      tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && item.url && window.open(item.url, '_blank', 'noopener')}
+    >
+      <div className="ni-row1">
+        <span className="ni-source">{item.source}</span>
+        <span className="ni-age">{item.age}</span>
+      </div>
+      <div className="ni-headline-row">
+        <div className="ni-headline">{item.headline}</div>
+        <ExternalLinkIcon />
+      </div>
+      {item.snippet && <div className="ni-snippet">{item.snippet}</div>}
+    </div>
+  )
+}
+
+function FeedSkeleton() {
+  return (
+    <div className="card">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="news-item feed-skeleton">
+          <div className="fs-source" />
+          <div className="fs-headline" />
+          <div className="fs-snippet" />
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function FeedColumn() {
   const { activeTopicPill, setActiveTopicPill } = useHub()
+  const { articles, loading, error } = useNews()
+
+  const filtered = activeTopicPill === 'all'
+    ? articles
+    : articles.filter(a => a.topic === activeTopicPill)
 
   return (
     <>
@@ -21,32 +64,38 @@ export default function FeedColumn() {
       </div>
 
       <div className="topic-row">
-        {TOPICS.map(t => (
-          <span
-            key={t}
-            className={`t-pill${activeTopicPill === t.toLowerCase() ? ' active' : ''}`}
-            onClick={() => setActiveTopicPill(t.toLowerCase())}
-          >{t}</span>
-        ))}
+        {TOPICS.map(t => {
+          const val = t.toLowerCase()
+          return (
+            <span
+              key={t}
+              className={`t-pill${activeTopicPill === val ? ' active' : ''}`}
+              onClick={() => setActiveTopicPill(val)}
+            >{t}</span>
+          )
+        })}
       </div>
 
       <div className="claude-suggestion">
         <div className="cs-label">Claude suggests</div>
-        <div className="cs-text">Based on your AI follows, consider adding "OpenAI product updates" — significant news this week relevant to your attribution work.</div>
+        <div className="cs-text">Add your goals and context in Settings to get personalized feed recommendations based on what you&apos;re working on.</div>
       </div>
 
-      <div className="card">
-        {NEWS.map(item => (
-          <div key={item.headline} className="news-item">
-            <div className="ni-row1">
-              <span className="ni-source">{item.source}</span>
-              <span className="ni-age">{item.age}</span>
-            </div>
-            <div className="ni-headline">{item.headline}</div>
-            <div className="ni-snippet">{item.snippet}</div>
-          </div>
-        ))}
-      </div>
+      {loading && <FeedSkeleton />}
+
+      {error && !loading && (
+        <div className="feed-error">Unable to load feeds — check your connection.</div>
+      )}
+
+      {!loading && filtered.length > 0 && (
+        <div className="card">
+          {filtered.map(item => <NewsItem key={item.id} item={item} />)}
+        </div>
+      )}
+
+      {!loading && !error && filtered.length === 0 && articles.length > 0 && (
+        <div className="feed-empty">No articles for this topic yet.</div>
+      )}
     </>
   )
 }
