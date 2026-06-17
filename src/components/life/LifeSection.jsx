@@ -35,7 +35,7 @@ function GiftIcon() {
 export default function LifeSection() {
   return (
     <>
-      <div className="sec-hdr" style={{ paddingLeft: 0, paddingTop: 6 }}>
+      <div className="sec-hdr">
         <span className="sec-title">Meals Today</span>
         <span className="sec-action">Plan Week</span>
       </div>
@@ -55,7 +55,7 @@ export default function LifeSection() {
         <ShoppingBagIcon /> Generate Grocery List
       </button>
 
-      <div className="sec-hdr" style={{ paddingLeft: 0, paddingTop: 6 }}>
+      <div className="sec-hdr">
         <span className="sec-title">Personal</span>
       </div>
       <div className="card">
@@ -69,7 +69,7 @@ export default function LifeSection() {
         </div>
       </div>
 
-      <div className="sec-hdr" style={{ paddingLeft: 0, paddingTop: 8 }}>
+      <div className="sec-hdr">
         <span className="sec-title">Upcoming</span>
       </div>
       <div className="card">

@@ -142,7 +142,6 @@ export default function MobileLayout() {
           <DayColumn />
         </div>
         <div className={`tab-section${activeTab === 'tasks' ? ' active' : ''}`} id="tab-tasks">
-          <div className="sec-hdr"><span className="sec-title">Priority Tasks</span><span className="sec-action">+ Add Task</span></div>
           <TasksSection />
         </div>
         <div className={`tab-section${activeTab === 'life' ? ' active' : ''}`} id="tab-life">

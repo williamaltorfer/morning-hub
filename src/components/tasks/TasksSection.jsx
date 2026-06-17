@@ -40,8 +40,9 @@ export default function TasksSection() {
 
   return (
     <>
-      <div className="sec-hdr" style={{ paddingLeft: 0, paddingTop: 0 }}>
+      <div className="sec-hdr">
         <span className="sec-title">Priority Tasks</span>
+        <span className="sec-action">+ Add Task</span>
       </div>
       <div className="scope-tabs">
         {SCOPE_TABS.map(tab => (
