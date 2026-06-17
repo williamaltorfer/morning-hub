@@ -63,8 +63,8 @@ function devNewsProxy(env) {
         }
 
         const key    = env.RSS2JSON_API_KEY
-        const params = new URLSearchParams({ rss_url: feedUrl, count: '10' })
-        if (key) params.set('api_key', key)
+        const params = new URLSearchParams({ rss_url: feedUrl })
+        if (key) { params.set('api_key', key); params.set('count', '10') }
 
         try {
           const upstream = await fetch(`https://api.rss2json.com/v1/api.json?${params}`)

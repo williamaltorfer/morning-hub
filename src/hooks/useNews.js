@@ -6,7 +6,7 @@ const CACHE_TTL = 30 * 60 * 1000
 const FEEDS = [
   { url: 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml', label: 'The Verge · AI',        topic: 'ai'       },
   { url: 'https://www.adexchanger.com/feed/',                                  label: 'AdExchanger',           topic: 'perf mktg'},
-  { url: 'https://feeds.reuters.com/reuters/businessNews',                     label: 'Reuters · Business',    topic: 'economy'  },
+  { url: 'https://feeds.npr.org/1017/rss.xml',                                 label: 'NPR · Economy',         topic: 'economy'  },
   { url: 'https://blockclubchicago.org/feed/',                                 label: 'Block Club Chicago',    topic: 'chicago'  },
 ]
 
