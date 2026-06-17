@@ -312,6 +312,8 @@ body {
   .tab-section { display:none; }
   .tab-section.active { display:block; }
 
+  .desktop-col-header { display:none; }
+
   .scroll-area .card         { margin-left:16px; margin-right:16px; }
   .scroll-area .weather-card { margin:16px 16px 14px; }
   .scroll-area .meeting-item { margin-left:16px; margin-right:16px; }
