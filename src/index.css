@@ -233,6 +233,13 @@ body {
 /* Horizon badge on tasks in goal view */
 .gv-horizon-badge { font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(140,136,128,0.1); color: var(--stone); }
 
+/* Inline date edit */
+.task-due-editable { cursor: pointer; border-bottom: 1px dashed transparent; transition: border-color .15s, color .15s; }
+.task-due-editable:hover { border-bottom-color: currentColor; }
+.t-due-empty { color: var(--stone-light); opacity: 0; }
+.todo-item:hover .t-due-empty { opacity: 1; }
+.task-date-input { font-family: var(--sans); font-size: 10px; color: var(--charcoal); background: rgba(255,255,255,0.85); border: 1px solid rgba(140,136,128,0.3); border-radius: 4px; padding: 1px 4px; cursor: pointer; }
+
 /* ── Meals ── */
 .meal-row { display:flex; align-items:stretch; border-bottom:1px solid var(--border); }
 .meal-row:last-child { border-bottom:none; }

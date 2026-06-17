@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useHub } from '../../context/HubContext'
 import useTasks from '../../hooks/useTasks'
 
@@ -227,10 +227,52 @@ function AddTaskForm({ defaultHorizon, onSave, onCancel }) {
 
 // ── Task Item ────────────────────────────────────────────────
 
-function TaskItem({ task, onToggle, onDelete }) {
-  const due     = fmtDue(task.dueDate)
-  const overdue = !task.done && task.dueDate && isOverdue(task.dueDate) && !isToday(task.dueDate)
+function InlineDateEdit({ taskId, dueDate, onUpdate }) {
+  const [editing, setEditing] = useState(false)
+  const inputRef = useRef(null)
 
+  useEffect(() => {
+    if (editing) inputRef.current?.showPicker?.()
+  }, [editing])
+
+  function save(val) {
+    onUpdate(taskId, { dueDate: val || null })
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="date"
+        className="task-date-input"
+        defaultValue={dueDate || ''}
+        onBlur={e => save(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter')  save(e.target.value)
+          if (e.key === 'Escape') setEditing(false)
+        }}
+        onClick={e => e.stopPropagation()}
+      />
+    )
+  }
+
+  const label = fmtDue(dueDate)
+  const overdue = !dueDate ? false : isOverdue(dueDate) && !isToday(dueDate)
+
+  return (
+    <span
+      className={`t-due task-due-editable${!label ? ' t-due-empty' : ''}`}
+      style={overdue ? { color: 'var(--terra)' } : {}}
+      onClick={e => { e.stopPropagation(); setEditing(true) }}
+      title="Click to change date"
+    >
+      {label || 'Set date'}
+    </span>
+  )
+}
+
+function TaskItem({ task, onToggle, onDelete, onUpdate }) {
   return (
     <div className={`todo-item${task.done ? ' task-done' : ''}`}>
       <div
@@ -241,11 +283,7 @@ function TaskItem({ task, onToggle, onDelete }) {
       <div className="t-body" onClick={() => onToggle(task.id)} style={{ cursor: 'pointer', flex: 1 }}>
         <div className={`t-task${task.done ? ' done' : ''}`}>{task.title}</div>
         <div className="t-meta">
-          {due && (
-            <span className="t-due" style={overdue ? { color: 'var(--terra)' } : {}}>
-              {due}
-            </span>
-          )}
+          <InlineDateEdit taskId={task.id} dueDate={task.dueDate} onUpdate={onUpdate} />
           <span className={`t-pri ${priClass(task.priority)}`}>{priLabel(task.priority)}</span>
         </div>
       </div>
@@ -290,7 +328,7 @@ function SuggestionItem({ s, onAccept, onDismiss }) {
 
 // ── Goal Group ───────────────────────────────────────────────
 
-function GoalGroup({ goalKey, goalTitle, tasks, suggestions, onToggle, onDelete, onAccept, onDismiss }) {
+function GoalGroup({ goalKey, goalTitle, tasks, suggestions, onToggle, onDelete, onUpdate, onAccept, onDismiss }) {
   if (!tasks.length && !suggestions.length) return null
   const displayTitle = goalKey === '__unlinked__' ? 'Unlinked' : goalTitle
 
@@ -303,6 +341,7 @@ function GoalGroup({ goalKey, goalTitle, tasks, suggestions, onToggle, onDelete,
           task={t}
           onToggle={onToggle}
           onDelete={onDelete}
+          onUpdate={onUpdate}
         />
       ))}
       {suggestions.length > 0 && (
@@ -381,10 +420,7 @@ function GoalViewHeader({ goal, tasks }) {
   )
 }
 
-function GoalTaskItem({ task, onToggle, onDelete }) {
-  const due     = fmtDue(task.dueDate)
-  const overdue = !task.done && task.dueDate && isOverdue(task.dueDate) && !isToday(task.dueDate)
-
+function GoalTaskItem({ task, onToggle, onDelete, onUpdate }) {
   return (
     <div className={`todo-item${task.done ? ' task-done' : ''}`}>
       <div
@@ -395,11 +431,7 @@ function GoalTaskItem({ task, onToggle, onDelete }) {
       <div className="t-body" onClick={() => onToggle(task.id)} style={{ cursor: 'pointer', flex: 1 }}>
         <div className={`t-task${task.done ? ' done' : ''}`}>{task.title}</div>
         <div className="t-meta">
-          {due && (
-            <span className="t-due" style={overdue ? { color: 'var(--terra)' } : {}}>
-              {due}
-            </span>
-          )}
+          <InlineDateEdit taskId={task.id} dueDate={task.dueDate} onUpdate={onUpdate} />
           <span className={`t-pri ${priClass(task.priority)}`}>{priLabel(task.priority)}</span>
           <span className="gv-horizon-badge">{task.horizon}</span>
         </div>
@@ -421,7 +453,7 @@ export default function TasksSection() {
   const { activeScopeTab, setActiveScopeTab } = useHub()
   const {
     tasks, suggestions, generating, generateError,
-    addTask, toggleDone, deleteTask,
+    addTask, updateTask, toggleDone, deleteTask,
     acceptSuggestion, dismissSuggestion, generateSuggestions,
   } = useTasks()
 
@@ -548,6 +580,7 @@ export default function TasksSection() {
                     task={t}
                     onToggle={toggleDone}
                     onDelete={deleteTask}
+                    onUpdate={updateTask}
                   />
                 ))}
                 {goalViewSuggestions.length > 0 && (
@@ -594,6 +627,7 @@ export default function TasksSection() {
                   suggestions={group.suggestions}
                   onToggle={toggleDone}
                   onDelete={deleteTask}
+                  onUpdate={updateTask}
                   onAccept={acceptSuggestion}
                   onDismiss={dismissSuggestion}
                 />
