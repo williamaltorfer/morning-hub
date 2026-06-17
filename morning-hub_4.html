@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Morning Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500;600&family=Dancing+Script:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════
+   TOKENS
+════════════════════════════════════════ */
+:root {
+  --bg:           #FAF8F4;
+  --surface:      #FFFFFF;
+  --surface-2:    #F5F1EB;
+  --border:       rgba(140,136,128,0.18);
+  --border-s:     rgba(140,136,128,0.32);
+  --sage:         #4A5C45;
+  --sage-bg:      rgba(74,92,69,0.08);
+  --charcoal:     #1E1E1E;
+  --terra:        #B5622A;
+  --terra-bg:     rgba(181,98,42,0.09);
+  --terra-light:  #C97A45;
+  --stone:        #8C8880;
+  --stone-light:  #B5B2AD;
+  --sand:         #F2EBE3;
+  --serif:  'Cormorant Garamond', Georgia, serif;
+  --sans:   'Jost', sans-serif;
+  --script: 'Dancing Script', cursive;
+  --r:      14px;
+
+  /* Glass */
+  --glass-white:     rgba(255,255,255,0.70);
+  --glass-dark:      rgba(20,18,15,0.76);
+  --glass-sage:      rgba(74,92,69,0.80);
+  --glass-border:    rgba(255,255,255,0.50);
+  --glass-border-dk: rgba(255,255,255,0.12);
+  --blur-sm:  blur(10px) saturate(1.5);
+  --blur-md:  blur(20px) saturate(1.8);
+  --blur-lg:  blur(32px) saturate(2.0);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { height:100%; }
+body {
+  min-height:100%;
+  font-family:var(--sans);
+  color:var(--charcoal);
+  background-color: #EAE4D6;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(74,92,69,0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 75%, rgba(181,98,42,0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 40% at 50% 50%, rgba(242,235,227,0.45) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 50% at 80% 10%, rgba(140,136,128,0.09) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-thumb { background:var(--stone-light); border-radius:2px; }
+
+/* ════════════════════════════════════════
+   SHARED COMPONENTS
+════════════════════════════════════════ */
+.sec-title  { font-size:9px; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--stone); }
+.sec-action { font-size:9px; font-weight:500; letter-spacing:.1em;  text-transform:uppercase; color:var(--terra); cursor:pointer; }
+.sec-hdr    { display:flex; align-items:baseline; justify-content:space-between; padding:18px 20px 12px; }
+
+.card {
+  background: rgba(255,255,255,0.68);
+  backdrop-filter: blur(14px) saturate(1.6);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  border-radius: var(--r);
+  border: 1px solid rgba(255,255,255,0.50);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.92) inset, 0 4px 16px rgba(30,20,10,0.07);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+/* weather */
+.weather-card {
+  border-radius: var(--r); overflow:hidden; position:relative; margin-bottom:14px; color:#fff;
+  background: rgba(74,92,69,0.80);
+  backdrop-filter: blur(28px) saturate(2.0);
+  -webkit-backdrop-filter: blur(28px) saturate(2.0);
+  border: 1px solid rgba(255,255,255,0.20);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.22) inset, 0 12px 40px rgba(74,92,69,0.28);
+}
+.weather-card::before { content:''; position:absolute; top:-50px; right:-50px; width:180px; height:180px; background:rgba(255,255,255,.04); border-radius:50%; pointer-events:none; }
+.weather-top  { display:flex; align-items:flex-start; justify-content:space-between; padding:20px 20px 10px; }
+.w-temp       { font-family:var(--serif); font-size:60px; font-weight:300; line-height:1; letter-spacing:-.02em; }
+.w-temp sup   { font-size:24px; vertical-align:super; font-weight:300; }
+.w-right      { text-align:right; padding-top:6px; }
+.w-condition  { font-family:var(--serif); font-size:17px; font-style:italic; font-weight:300; }
+.w-loc        { font-size:9px; letter-spacing:.16em; text-transform:uppercase; opacity:.55; margin-top:3px; }
+.w-stats      { padding:0 20px 14px; display:flex; gap:14px; font-size:10px; letter-spacing:.06em; opacity:.6; }
+.w-hourly     { display:flex; border-top:1px solid rgba(255,255,255,.14); padding:12px 8px; }
+.w-hour       { flex:1; text-align:center; }
+.w-hour .wh-time { font-size:8px; letter-spacing:.1em; text-transform:uppercase; opacity:.5; margin-bottom:5px; }
+.w-hour .wh-icon { display:flex; justify-content:center; margin-bottom:5px; }
+.w-hour .wh-temp { font-family:var(--serif); font-size:13px; }
+
+/* day summary bar */
+.day-summary-bar { background:rgba(245,241,235,0.65); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid rgba(140,136,128,0.14); padding:10px 20px; font-family:var(--serif); font-size:13px; font-style:italic; color:var(--stone); line-height:1.5; }
+
+/* meetings */
+.meeting-item {
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(10px) saturate(1.5);
+  -webkit-backdrop-filter: blur(10px) saturate(1.5);
+  border-radius: var(--r);
+  border: 1px solid rgba(255,255,255,0.48);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.90) inset, 0 4px 14px rgba(30,20,10,0.05);
+  margin-bottom: 10px; overflow:hidden; cursor:pointer;
+  transition: box-shadow .2s, transform .15s; position:relative;
+}
+.meeting-item:hover { box-shadow:0 1px 0 rgba(255,255,255,0.90) inset, 0 8px 28px rgba(30,20,10,0.10); transform:translateY(-1px); }
+.meeting-item.flagged { border-left:3px solid var(--terra); }
+.meeting-item.personal { border-left:3px solid var(--sage); }
+.meeting-item.past { opacity:.7; }
+.meeting-body { padding:14px 16px; }
+.meet-row1  { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:3px; }
+.meet-name  { font-size:13px; font-weight:500; letter-spacing:.01em; color:var(--charcoal); }
+.meet-time  { font-size:9px; font-weight:400; letter-spacing:.1em; text-transform:uppercase; color:var(--stone); flex-shrink:0; margin-left:8px; }
+.meet-sub   { font-size:10px; color:var(--stone-light); letter-spacing:.02em; margin-bottom:8px; }
+.meet-flag  { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:4px; font-size:9px; letter-spacing:.04em; }
+.meet-flag.warn { background:var(--terra-bg); color:var(--terra); border:1px solid rgba(181,98,42,.18); }
+.meet-flag.info { background:var(--sage-bg);  color:var(--sage);  border:1px solid rgba(74,92,69,.15); }
+.meet-drawer { max-height:0; overflow:hidden; transition:max-height .38s ease, padding .28s ease; background:rgba(245,241,235,0.72); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-top:0px solid rgba(140,136,128,0.15); }
+.meeting-item.open .meet-drawer { max-height:220px; border-top-width:1px; padding:14px 16px; }
+.drawer-label   { font-size:8px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--stone); margin-bottom:6px; }
+.drawer-text    { font-family:var(--serif); font-size:13px; font-style:italic; color:var(--charcoal); line-height:1.6; margin-bottom:10px; }
+.drawer-actions { display:flex; gap:7px; flex-wrap:wrap; }
+.dbtn { font-size:9px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; padding:6px 13px; border:1px solid var(--border-s); border-radius:4px; background:transparent; color:var(--stone); cursor:pointer; transition:all .18s; }
+.dbtn:hover, .dbtn:active { background:var(--charcoal); color:#fff; border-color:var(--charcoal); }
+.dbtn.primary { background:var(--charcoal); color:#fff; border-color:var(--charcoal); }
+
+/* now line */
+.now-line  { display:flex; align-items:center; gap:8px; margin:4px 0 10px; }
+.now-label { font-size:8px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--terra); flex-shrink:0; }
+.now-rule  { flex:1; height:1px; background:var(--terra); }
+.now-dot   { width:6px; height:6px; border-radius:50%; background:var(--terra); flex-shrink:0; box-shadow:0 0 6px rgba(181,98,42,0.5); }
+
+/* tasks */
+.scope-tabs { display:flex; background:rgba(255,255,255,0.50); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.48); border-radius:8px; overflow:hidden; margin-bottom:14px; box-shadow:0 1px 0 rgba(255,255,255,0.88) inset; }
+.stab { flex:1; padding:9px 4px; font-size:9px; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--stone); border:none; background:transparent; cursor:pointer; transition:all .18s; }
+.stab.active { background:rgba(30,30,30,0.88); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:#fff; border-radius:7px; }
+.goal-label { font-size:8px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--terra); padding:12px 20px 6px; border-bottom:1px solid rgba(181,98,42,.12); }
+.todo-item { display:flex; align-items:flex-start; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border); cursor:pointer; background:var(--surface); transition:background .15s; }
+.todo-item:last-child { border-bottom:none; }
+.todo-item:hover { background:rgba(255,255,255,0.40); }
+.t-check { width:16px; height:16px; border:1.5px solid var(--stone-light); border-radius:50%; flex-shrink:0; margin-top:2px; transition:all .18s; position:relative; }
+.t-check.done { background:var(--sage); border-color:var(--sage); }
+.t-check.done::after { content:''; position:absolute; top:4px; left:4px; width:4px; height:4px; border-radius:50%; background:#fff; }
+.t-body { flex:1; }
+.t-task { font-size:13px; font-weight:400; color:var(--charcoal); line-height:1.4; margin-bottom:4px; letter-spacing:.01em; }
+.t-task.done { text-decoration:line-through; color:var(--stone-light); }
+.t-meta { display:flex; align-items:center; gap:7px; }
+.t-due  { font-size:9px; color:var(--stone-light); letter-spacing:.04em; }
+.t-pri  { font-size:8px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; padding:2px 7px; border-radius:3px; }
+.pri-hi  { background:var(--terra-bg); color:var(--terra); }
+.pri-med { background:var(--sage-bg);  color:var(--sage);  }
+.pri-lo  { background:rgba(140,136,128,.1); color:var(--stone); }
+
+/* meals */
+.meal-row { display:flex; align-items:stretch; border-bottom:1px solid var(--border); }
+.meal-row:last-child { border-bottom:none; }
+.meal-label-col { width:88px; flex-shrink:0; padding:14px; display:flex; align-items:center; border-right:1px solid rgba(140,136,128,0.12); background:rgba(245,241,235,0.60); }
+.meal-lbl    { font-size:8px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color:var(--stone); }
+.meal-content{ padding:14px 16px; flex:1; }
+.meal-name   { font-family:var(--serif); font-size:15px; font-style:italic; color:var(--charcoal); margin-bottom:3px; line-height:1.3; }
+.meal-tag    { font-size:9px; color:var(--stone-light); letter-spacing:.04em; }
+
+.outline-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px; border:1px solid rgba(181,98,42,0.28); border-radius:10px; background:rgba(255,255,255,0.45); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); color:var(--terra); font-family:var(--sans); font-size:10px; font-weight:500; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; transition:all .18s; margin-bottom:14px; box-shadow:0 1px 0 rgba(255,255,255,0.8) inset; }
+.outline-btn:hover { background:var(--terra); color:#fff; }
+
+/* gift */
+.gift-card  { display:flex; align-items:center; gap:14px; padding:16px 20px; }
+.gift-icon  { width:40px; height:40px; background:var(--terra); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.gift-body  { flex:1; }
+.gift-title { font-size:13px; font-weight:500; color:var(--charcoal); margin-bottom:3px; }
+.gift-sub   { font-size:10px; color:var(--stone); margin-bottom:10px; line-height:1.4; }
+.gift-btn   { font-size:9px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; padding:7px 16px; background:var(--charcoal); color:#fff; border:none; border-radius:5px; cursor:pointer; transition:opacity .18s; }
+.gift-btn:hover { opacity:.75; }
+
+/* news */
+.topic-row { display:flex; gap:6px; overflow-x:auto; padding-bottom:12px; scrollbar-width:none; }
+.topic-row::-webkit-scrollbar { display:none; }
+.t-pill { flex-shrink:0; font-size:9px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; padding:5px 12px; border-radius:20px; border:1px solid rgba(140,136,128,0.28); color:var(--stone); background:rgba(255,255,255,0.55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); cursor:pointer; white-space:nowrap; transition:all .15s; box-shadow:0 1px 0 rgba(255,255,255,0.88) inset; }
+.t-pill.active { background:rgba(30,30,30,0.88); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); color:#fff; border-color:rgba(255,255,255,0.08); }
+.claude-suggestion { padding:12px 14px; background:rgba(74,92,69,0.08); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(74,92,69,0.18); border-radius:10px; margin-bottom:14px; box-shadow:0 1px 0 rgba(255,255,255,0.55) inset; }
+.cs-label { font-size:8px; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--sage); margin-bottom:5px; }
+.cs-text  { font-family:var(--serif); font-size:13px; font-style:italic; color:var(--charcoal); line-height:1.55; }
+.news-item { padding:14px 20px; border-bottom:1px solid var(--border); cursor:pointer; transition:background .15s; }
+.news-item:last-child { border-bottom:none; }
+.news-item:hover { background:var(--surface-2); }
+.ni-row1     { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
+.ni-source   { font-size:9px; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--terra); }
+.ni-age      { font-size:9px; color:var(--stone-light); }
+.ni-headline { font-family:var(--serif); font-size:15px; font-weight:400; color:var(--charcoal); line-height:1.45; margin-bottom:4px; }
+.ni-snippet  { font-size:11px; color:var(--stone); line-height:1.5; }
+
+/* voice bar */
+.voice-bar { display:flex; align-items:center; gap:12px; background:rgba(20,18,15,0.76); backdrop-filter:blur(20px) saturate(1.8); -webkit-backdrop-filter:blur(20px) saturate(1.8); border-bottom:1px solid rgba(255,255,255,0.10); box-shadow:0 1px 0 rgba(255,255,255,0.07) inset, 0 4px 12px rgba(0,0,0,0.18); padding:0 24px; height:48px; transition:height .35s cubic-bezier(.4,0,.2,1), opacity .25s; overflow:hidden; }
+.voice-bar.hidden { height:0; opacity:0; }
+.voice-btn  { width:32px; height:32px; background:var(--terra); border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:transform .18s, background .18s; }
+.voice-btn:hover  { background:var(--terra-light); }
+.voice-btn:active { transform:scale(.9); }
+.voice-text { flex:1; font-size:11px; font-weight:300; letter-spacing:.05em; color:var(--stone-light); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.voice-text span { color:#fff; font-weight:400; }
+.voice-wave { display:flex; align-items:center; gap:2px; height:18px; flex-shrink:0; }
+.voice-wave i { display:block; width:2px; background:var(--stone); border-radius:2px; animation:wv 1.2s ease-in-out infinite; }
+.voice-wave i:nth-child(1){height:5px;  animation-delay:0s}
+.voice-wave i:nth-child(2){height:12px; animation-delay:.1s}
+.voice-wave i:nth-child(3){height:8px;  animation-delay:.2s}
+.voice-wave i:nth-child(4){height:16px; animation-delay:.3s}
+.voice-wave i:nth-child(5){height:7px;  animation-delay:.4s}
+.voice-wave i:nth-child(6){height:12px; animation-delay:.5s}
+.voice-wave i:nth-child(7){height:5px;  animation-delay:.6s}
+@keyframes wv { 0%,100%{transform:scaleY(1);opacity:.35} 50%{transform:scaleY(1.9);opacity:.85} }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+
+/* ════════════════════════════════════════
+   DESKTOP LAYOUT  (≥ 900px)
+════════════════════════════════════════ */
+@media (min-width:900px) {
+  body { overflow:hidden; height:100vh; display:flex; flex-direction:column; }
+
+  /* ── Desktop Header ── */
+  .desktop-header {
+    flex-shrink:0;
+    background: rgba(255,255,255,0.70);
+    backdrop-filter: blur(28px) saturate(2.0);
+    -webkit-backdrop-filter: blur(28px) saturate(2.0);
+    border-bottom: 1px solid rgba(255,255,255,0.50);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset, 0 4px 20px rgba(30,20,10,0.05);
+    padding:0 40px; height:72px;
+    display:flex; align-items:center; justify-content:space-between;
+    position:relative; z-index:50;
+  }
+
+  .dh-left  { display:flex; flex-direction:column; }
+  .dh-script { font-family:var(--script); font-size:12px; color:var(--stone); line-height:1; margin-bottom:1px; }
+  .dh-title  { font-family:var(--serif); font-size:26px; font-weight:300; line-height:1; letter-spacing:-.01em; }
+  .dh-title em { font-style:italic; color:var(--terra); }
+
+  .dh-center { position:absolute; left:50%; transform:translateX(-50%); }
+  .dh-greeting { font-family:var(--serif); font-size:15px; font-style:italic; color:var(--sage); }
+
+  .dh-right { display:flex; align-items:center; gap:20px; }
+  .dh-date  { text-align:right; }
+  .dh-date-main { font-family:var(--serif); font-size:15px; font-weight:400; }
+  .dh-time-str  { font-size:9px; font-weight:400; letter-spacing:.14em; text-transform:uppercase; color:var(--stone); margin-top:2px; }
+
+  .dh-voice-btn {
+    width:36px; height:36px; background:var(--terra); border-radius:50%;
+    border:none; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:transform .18s, background .18s; flex-shrink:0;
+  }
+  .dh-voice-btn:hover  { background:var(--terra-light); }
+  .dh-voice-btn:active { transform:scale(.92); }
+
+  /* ── Desktop Voice Bar (below header) ── */
+  .desktop-voice { flex-shrink:0; }
+
+  /* ── Desktop grid ── */
+  .desktop-grid {
+    flex:1;
+    display:grid;
+    grid-template-columns: 300px 1fr 280px;
+    overflow:hidden;
+  }
+
+  .d-col {
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding:20px 20px 32px;
+    border-right:1px solid var(--border);
+  }
+  .d-col:last-child { border-right:none; }
+
+  /* col padding overrides for cards */
+  .d-col .card { margin-left:0; margin-right:0; }
+  .d-col .weather-card { margin-left:0; margin-right:0; }
+  .d-col .meeting-item { margin-left:0; margin-right:0; }
+  .d-col .scope-tabs   { margin-left:0; margin-right:0; }
+  .d-col .outline-btn  { margin-left:0; margin-right:0; }
+  .d-col .topic-row    { padding-left:0; }
+  .d-col .claude-suggestion { margin-left:0; margin-right:0; }
+
+  /* Desktop nav tabs (top horizontal) */
+  .desktop-col-header {
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:16px; padding-bottom:12px;
+    border-bottom:1px solid var(--border);
+  }
+  .desktop-col-title {
+    font-family:var(--serif); font-size:20px; font-weight:300; letter-spacing:-.01em;
+  }
+  .desktop-col-title em { font-style:italic; color:var(--terra); }
+
+  /* hide mobile-only elements */
+  .mobile-only { display:none !important; }
+  .desktop-only { display:flex; }
+}
+
+
+/* ════════════════════════════════════════
+   TABLET  (600–899px)
+════════════════════════════════════════ */
+@media (min-width:600px) and (max-width:899px) {
+  body { overflow:hidden; height:100vh; display:flex; flex-direction:column; }
+
+  .desktop-header {
+    flex-shrink:0;
+    background: rgba(255,255,255,0.70);
+    backdrop-filter: blur(24px) saturate(1.8);
+    -webkit-backdrop-filter: blur(24px) saturate(1.8);
+    border-bottom: 1px solid rgba(255,255,255,0.48);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.95) inset;
+    padding:0 28px; height:64px;
+    display:flex; align-items:center; justify-content:space-between; z-index:50;
+  }
+  .dh-left  { display:flex; flex-direction:column; }
+  .dh-script { font-family:var(--script); font-size:12px; color:var(--stone); line-height:1; margin-bottom:1px; }
+  .dh-title  { font-family:var(--serif); font-size:22px; font-weight:300; line-height:1; letter-spacing:-.01em; }
+  .dh-title em { font-style:italic; color:var(--terra); }
+  .dh-center { display:none; }
+  .dh-right { display:flex; align-items:center; gap:16px; }
+  .dh-date  { text-align:right; }
+  .dh-date-main { font-family:var(--serif); font-size:14px; font-weight:400; }
+  .dh-time-str  { font-size:9px; font-weight:400; letter-spacing:.14em; text-transform:uppercase; color:var(--stone); margin-top:2px; }
+  .dh-voice-btn { width:32px; height:32px; background:var(--terra); border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+  .desktop-voice { flex-shrink:0; }
+
+  .desktop-grid {
+    flex:1;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    overflow:hidden;
+  }
+  .d-col { overflow-y:auto; padding:18px 18px 32px; border-right:1px solid var(--border); }
+  .d-col:last-child { display:none; } /* hide news col on tablet, accessible via tab */
+  .d-col .card, .d-col .weather-card, .d-col .meeting-item,
+  .d-col .scope-tabs, .d-col .outline-btn { margin-left:0; margin-right:0; }
+  .d-col .topic-row { padding-left:0; }
+  .d-col .claude-suggestion { margin-left:0; margin-right:0; }
+
+  .desktop-col-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+  .desktop-col-title  { font-family:var(--serif); font-size:18px; font-weight:300; letter-spacing:-.01em; }
+  .desktop-col-title em { font-style:italic; color:var(--terra); }
+
+  .mobile-only { display:none !important; }
+  .desktop-only { display:flex; }
+}
+
+
+/* ════════════════════════════════════════
+   MOBILE  (< 600px)
+════════════════════════════════════════ */
+@media (max-width:599px) {
+  html, body { height:100%; overflow:hidden; }
+
+  .desktop-only { display:none !important; }
+  .mobile-only  { display:flex; }
+
+  /* Mobile shell */
+  .mobile-shell {
+    display:flex; flex-direction:column;
+    height:100dvh;
+    position:relative;
+  }
+
+  .sticky-top { flex-shrink:0; position:relative; z-index:50; transition:box-shadow .3s; }
+  .sticky-top.scrolled { box-shadow:0 2px 16px rgba(0,0,0,.07); }
+
+  .hub-header { background:var(--surface); border-bottom:1px solid var(--border); overflow:hidden; height:138px; transition:height .35s cubic-bezier(.4,0,.2,1); }
+  .hub-header.mini { height:calc(56px + env(safe-area-inset-top, 0px)); }
+
+  .hdr-full-content { padding:max(52px, calc(env(safe-area-inset-top, 20px) + 36px)) 22px 14px; display:flex; flex-direction:column; gap:10px; transition:opacity .25s, transform .25s; }
+  .hub-header.mini .hdr-full-content { opacity:0; transform:translateY(-6px); pointer-events:none; }
+
+  .header-top { display:flex; align-items:flex-end; justify-content:space-between; }
+  .brand-script { font-family:var(--script); font-size:13px; color:var(--stone); display:block; margin-bottom:1px; }
+  .brand-title  { font-family:var(--serif); font-size:32px; font-weight:300; line-height:1; letter-spacing:-.01em; }
+  .brand-title em { font-style:italic; color:var(--terra); }
+  .header-right { text-align:right; }
+  .hdr-date { font-family:var(--serif); font-size:16px; font-weight:400; }
+  .hdr-time { font-size:10px; font-weight:400; letter-spacing:.14em; text-transform:uppercase; color:var(--stone); margin-top:2px; }
+  .hdr-greeting { font-family:var(--serif); font-size:13px; font-style:italic; color:var(--sage); }
+
+  .hdr-mini-content { position:absolute; top:0; left:0; right:0; height:calc(56px + env(safe-area-inset-top, 0px)); padding:max(0px, env(safe-area-inset-top, 0px)) 22px 0; display:flex; align-items:center; justify-content:space-between; opacity:0; transform:translateY(6px); transition:opacity .25s .05s, transform .25s .05s; pointer-events:none; }
+  .hub-header.mini .hdr-mini-content { opacity:1; transform:translateY(0); pointer-events:auto; }
+  .mini-brand { font-family:var(--serif); font-size:20px; font-weight:300; letter-spacing:-.01em; }
+  .mini-brand em { font-style:italic; color:var(--terra); }
+  .mini-right { display:flex; align-items:center; gap:12px; }
+  .mini-time  { font-size:10px; font-weight:400; letter-spacing:.12em; text-transform:uppercase; color:var(--stone); }
+  .mini-voice-btn { width:30px; height:30px; background:var(--terra); border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+  .scroll-area { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding-bottom:calc(62px + 16px); }
+  .scroll-area::-webkit-scrollbar { width:3px; }
+  .scroll-area::-webkit-scrollbar-thumb { background:var(--stone-light); border-radius:2px; }
+
+  .tab-section { display:none; }
+  .tab-section.active { display:block; }
+
+  /* card margins inside scroll area */
+  .scroll-area .card      { margin-left:16px; margin-right:16px; }
+  .scroll-area .weather-card { margin:16px 16px 14px; }
+  .scroll-area .meeting-item { margin-left:16px; margin-right:16px; }
+  .scroll-area .scope-tabs   { margin-left:16px; margin-right:16px; }
+  .scroll-area .outline-btn  { width:calc(100% - 32px); margin-left:16px; margin-right:16px; }
+  .scroll-area .sec-hdr      { padding:18px 20px 12px; }
+  .scroll-area .topic-row    { padding:0 16px 12px; }
+  .scroll-area .claude-suggestion { margin:0 16px 12px; }
+  .scroll-area .now-line { margin:4px 16px 10px; }
+
+  /* bottom nav */
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; height:62px; background:rgba(255,255,255,0.70); backdrop-filter:blur(28px) saturate(2.0); -webkit-backdrop-filter:blur(28px) saturate(2.0); border-top:1px solid rgba(255,255,255,0.52); box-shadow:0 1px 0 rgba(255,255,255,0.95) inset, 0 -4px 20px rgba(30,20,10,0.06); display:flex; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100; }
+  .nav-tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:none; background:transparent; cursor:pointer; padding:8px 4px 4px; }
+  .nav-icon-wrap { transition:transform .2s; }
+  .nav-tab.active .nav-icon-wrap { transform:translateY(-2px); }
+  .nav-label { font-size:8px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--stone-light); transition:color .18s; }
+  .nav-tab.active .nav-label { color:var(--terra); }
+}
+
+/* ════════════════════════════════════════
+   SETTINGS PANEL
+════════════════════════════════════════ */
+
+/* Settings button — shared */
+.settings-btn {
+  width:34px; height:34px;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.40);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+  transition: transform .18s, background .18s;
+}
+.settings-btn:hover  { background: rgba(255,255,255,0.40); transform: rotate(30deg); }
+.settings-btn:active { transform: scale(.9) rotate(30deg); }
+.settings-btn svg    { flex-shrink:0; }
+
+/* Backdrop */
+.settings-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(20,18,15,0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s ease;
+}
+.settings-backdrop.open { opacity: 1; pointer-events: auto; }
+
+/* Panel */
+.settings-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 201;
+  width: min(520px, 100vw);
+  background: rgba(250,248,244,0.88);
+  backdrop-filter: blur(40px) saturate(2.2);
+  -webkit-backdrop-filter: blur(40px) saturate(2.2);
+  border-left: 1px solid rgba(255,255,255,0.55);
+  box-shadow: -8px 0 40px rgba(30,20,10,0.12), inset 1px 0 0 rgba(255,255,255,0.8);
+  transform: translateX(100%);
+  transition: transform .38s cubic-bezier(.4,0,.2,1);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.settings-panel.open { transform: translateX(0); }
+
+/* Panel header */
+.sp-header {
+  flex-shrink: 0;
+  padding: max(52px, calc(env(safe-area-inset-top,20px) + 20px)) 28px 18px;
+  border-bottom: 1px solid rgba(140,136,128,0.14);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  background: rgba(255,255,255,0.45);
+}
+.sp-title-group { display: flex; flex-direction: column; }
+.sp-script { font-family: var(--script); font-size: 12px; color: var(--stone); }
+.sp-title  { font-family: var(--serif); font-size: 26px; font-weight: 300; line-height: 1; }
+.sp-title em { font-style: italic; color: var(--terra); }
+.sp-close {
+  width: 32px; height: 32px;
+  background: rgba(30,30,30,0.08); border: 1px solid rgba(140,136,128,0.2);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .18s;
+}
+.sp-close:hover { background: rgba(30,30,30,0.15); }
+
+/* Panel tabs */
+.sp-tabs {
+  flex-shrink: 0;
+  display: flex;
+  border-bottom: 1px solid rgba(140,136,128,0.14);
+  background: rgba(255,255,255,0.30);
+}
+.sp-tab {
+  flex: 1; padding: 13px 8px;
+  font-size: 9px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--stone); border: none; background: transparent; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all .18s;
+  margin-bottom: -1px;
+}
+.sp-tab.active { color: var(--terra); border-bottom-color: var(--terra); }
+
+/* Panel scroll body */
+.sp-body {
+  flex: 1; overflow-y: auto; padding: 24px 28px 40px;
+}
+.sp-body::-webkit-scrollbar { width: 3px; }
+.sp-body::-webkit-scrollbar-thumb { background: rgba(140,136,128,0.3); border-radius: 2px; }
+
+.sp-section { display: none; }
+.sp-section.active { display: block; }
+
+/* ── Goals section ── */
+.horizon-block { margin-bottom: 28px; }
+
+.horizon-label {
+  font-size: 8px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--stone); margin-bottom: 12px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(140,136,128,0.15);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.horizon-label span { color: var(--terra); cursor: pointer; font-size: 8px; letter-spacing: .1em; }
+
+.goal-card {
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.55);
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 8px rgba(30,20,10,0.05);
+}
+.goal-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px;
+}
+.goal-card-title {
+  font-size: 13px; font-weight: 500; color: var(--charcoal); line-height: 1.4; flex: 1;
+}
+.goal-status {
+  font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 20px; flex-shrink: 0;
+}
+.status-on-track  { background: rgba(74,92,69,0.10);  color: var(--sage);  border: 1px solid rgba(74,92,69,0.15); }
+.status-at-risk   { background: rgba(181,98,42,0.10); color: var(--terra); border: 1px solid rgba(181,98,42,0.18); }
+.status-complete  { background: rgba(140,136,128,0.10); color: var(--stone); border: 1px solid rgba(140,136,128,0.18); }
+
+.goal-metric {
+  font-size: 11px; color: var(--stone); letter-spacing: .02em; margin-bottom: 6px;
+}
+.goal-progress-bar {
+  height: 3px; background: rgba(140,136,128,0.15); border-radius: 2px; overflow: hidden;
+}
+.goal-progress-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--sage), rgba(74,92,69,0.6));
+  transition: width .4s ease;
+}
+.goal-progress-fill.terra {
+  background: linear-gradient(90deg, var(--terra), rgba(181,98,42,0.6));
+}
+.goal-card-actions {
+  display: flex; gap: 6px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid rgba(140,136,128,0.10);
+}
+.goal-action-btn {
+  font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  padding: 5px 10px; border: 1px solid rgba(140,136,128,0.25); border-radius: 4px;
+  background: rgba(255,255,255,0.5); color: var(--stone); cursor: pointer; transition: all .15s;
+}
+.goal-action-btn:hover { background: var(--charcoal); color: #fff; border-color: var(--charcoal); }
+.goal-action-btn.primary { background: var(--charcoal); color: #fff; border-color: var(--charcoal); }
+
+.add-goal-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 10px;
+  border: 1px dashed rgba(140,136,128,0.30); border-radius: 10px;
+  background: transparent; color: var(--stone);
+  font-family: var(--sans); font-size: 9px; font-weight: 500; letter-spacing: .12em;
+  text-transform: uppercase; cursor: pointer; transition: all .18s;
+}
+.add-goal-btn:hover { border-color: var(--terra); color: var(--terra); background: rgba(181,98,42,0.04); }
+
+/* ── Context section ── */
+.context-intro {
+  font-family: var(--serif); font-size: 14px; font-style: italic;
+  color: var(--stone); line-height: 1.65; margin-bottom: 20px;
+}
+
+.context-field-label {
+  font-size: 8px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--stone); margin-bottom: 8px; margin-top: 20px; display: block;
+}
+.context-field-label:first-of-type { margin-top: 0; }
+
+.context-textarea, .context-input {
+  width: 100%;
+  background: rgba(255,255,255,0.60);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.55);
+  border-radius: 8px; padding: 12px 14px;
+  font-family: var(--sans); font-size: 12px; font-weight: 400; line-height: 1.6;
+  color: var(--charcoal); resize: vertical;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.9) inset, 0 2px 6px rgba(30,20,10,0.04);
+  transition: border-color .18s, box-shadow .18s;
+}
+.context-textarea { min-height: 90px; }
+.context-textarea:focus, .context-input:focus {
+  outline: none;
+  border-color: rgba(181,98,42,0.35);
+  box-shadow: 0 0 0 3px rgba(181,98,42,0.08), 0 1px 0 rgba(255,255,255,0.9) inset;
+}
+
+.context-tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.context-tag {
+  font-size: 9px; font-weight: 500; letter-spacing: .08em;
+  padding: 4px 10px; border-radius: 20px;
+  background: rgba(255,255,255,0.60); border: 1px solid rgba(140,136,128,0.25);
+  color: var(--stone); cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; gap: 5px;
+}
+.context-tag .tag-x { color: var(--stone-light); font-size: 10px; line-height: 1; }
+.context-tag:hover .tag-x { color: var(--terra); }
+
+.context-hint {
+  font-size: 10px; color: var(--stone-light); letter-spacing: .02em;
+  line-height: 1.5; margin-top: 6px;
+}
+
+/* SP Footer */
+.sp-footer {
+  flex-shrink: 0;
+  padding: 16px 28px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(140,136,128,0.14);
+  background: rgba(255,255,255,0.30);
+  display: flex; gap: 10px;
+}
+.sp-save-btn {
+  flex: 1; padding: 12px;
+  background: rgba(30,30,30,0.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+  font-family: var(--sans); font-size: 10px; font-weight: 500; letter-spacing: .14em;
+  text-transform: uppercase; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.1) inset;
+  transition: opacity .18s;
+}
+.sp-save-btn:hover { opacity: .82; }
+.sp-cancel-btn {
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.45); border: 1px solid rgba(140,136,128,0.25); border-radius: 8px;
+  font-family: var(--sans); font-size: 10px; font-weight: 500; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--stone); cursor: pointer; transition: all .18s;
+}
+.sp-cancel-btn:hover { background: rgba(255,255,255,0.65); }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     DESKTOP + TABLET  LAYOUT
+═══════════════════════════════════════ -->
+<div class="desktop-only" style="flex-direction:column; height:100vh; display:none;">
+
+  <!-- Desktop Header -->
+  <header class="desktop-header">
+    <div class="dh-left">
+      <span class="dh-script">good morning</span>
+      <h1 class="dh-title">Morning <em>Hub</em></h1>
+    </div>
+    <div class="dh-center">
+      <span class="dh-greeting">You have a full day ahead — let's make it count.</span>
+    </div>
+    <div class="dh-right">
+      <div class="dh-date">
+        <div class="dh-date-main">Sunday, May 24</div>
+        <div class="dh-time-str" id="dtimeDesk">7:42 AM · Chicago</div>
+      </div>
+      <button class="settings-btn" onclick="openSettings()" title="Goals &amp; Context">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--stone)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="dh-voice-btn" id="deskVoiceBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Desktop Voice Bar -->
+  <div class="voice-bar desktop-voice" id="deskVoiceBar">
+    <button class="voice-btn" id="deskVoiceBtnBar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <div class="voice-text" id="deskVoiceText">Ask anything — <span>"What do I need to prep for my 10am?"</span> · <span>"Order Sarah a birthday gift"</span> · <span>"Add milk to my grocery list"</span></div>
+    <div class="voice-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+
+  <!-- Desktop 3-col grid -->
+  <div class="desktop-grid">
+
+    <!-- COL 1: Day / Schedule -->
+    <div class="d-col">
+      <div class="desktop-col-header">
+        <span class="desktop-col-title"><em>Day</em></span>
+        <span class="sec-action">+ Add</span>
+      </div>
+
+      <!-- Weather -->
+      <div class="weather-card">
+        <div class="weather-top">
+          <div class="w-temp">62<sup>°</sup></div>
+          <div class="w-right">
+            <div class="w-condition">Partly Cloudy</div>
+            <div class="w-loc">Chicago · Lincoln Park</div>
+          </div>
+        </div>
+        <div class="w-stats"><span>H 71°</span><span>L 54°</span><span>Wind 12 mph</span><span>Rain 20%</span></div>
+        <div class="w-hourly">
+          <div class="w-hour"><div class="wh-time">Now</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div><div class="wh-temp">62°</div></div>
+          <div class="w-hour"><div class="wh-time">9am</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div><div class="wh-temp">65°</div></div>
+          <div class="w-hour"><div class="wh-time">11am</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div><div class="wh-temp">68°</div></div>
+          <div class="w-hour"><div class="wh-time">2pm</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div><div class="wh-temp">71°</div></div>
+          <div class="w-hour"><div class="wh-time">5pm</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div><div class="wh-temp">68°</div></div>
+          <div class="w-hour"><div class="wh-time">7pm</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><div class="wh-temp">62°</div></div>
+        </div>
+      </div>
+
+      <div class="day-summary-bar" style="border-radius:var(--r) var(--r) 0 0; margin-bottom:0;">5 events · Cubs game tonight 7:05 · Busiest 9–11am</div>
+      <div style="margin-bottom:10px"></div>
+
+      <div class="meeting-item past" onclick="this.classList.toggle('open')">
+        <div class="meeting-body"><div class="meet-row1"><span class="meet-name">Weekly Standup</span><span class="meet-time">7:00–7:30 AM</span></div><div class="meet-sub">Performance Team · Completed — tap to review</div></div>
+        <div class="meet-drawer"><div class="drawer-label">Summary</div><div class="drawer-text">"Q2 attribution discussed. Jordan flagged 12% drop in Meta ROAS week-over-week."</div><div class="drawer-actions"><button class="dbtn">Play</button><button class="dbtn">Transcript</button><button class="dbtn primary">Ask Agent</button></div></div>
+      </div>
+
+      <div class="now-line"><span class="now-label">Now</span><div class="now-rule"></div><div class="now-dot"></div></div>
+
+      <div class="meeting-item flagged" onclick="this.classList.toggle('open')">
+        <div class="meeting-body"><div class="meet-row1"><span class="meet-name">Q2 Campaign Review</span><span class="meet-time">10:00–11:00 AM</span></div><div class="meet-sub">Meridian Health · Zoom</div><div class="meet-flag warn"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Deck not shared yet</div></div>
+        <div class="meet-drawer"><div class="drawer-label">Suggested Prep</div><div class="drawer-text">"Client will likely ask about CPL trends. Pull May report, creative performance tab ready."</div><div class="drawer-actions"><button class="dbtn">Open Deck</button><button class="dbtn">Join Zoom</button><button class="dbtn primary">Ask Agent</button></div></div>
+      </div>
+
+      <div class="meeting-item" onclick="this.classList.toggle('open')">
+        <div class="meeting-body"><div class="meet-row1"><span class="meet-name">Haircut · Aidan at FORM</span><span class="meet-time">12:30 PM</span></div><div class="meet-sub">1123 N Damen Ave · Personal</div><div class="meet-flag info"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Leave by 12:15</div></div>
+        <div class="meet-drawer"><div class="drawer-label">Getting There</div><div class="drawer-text">"10 min drive from home. Street parking on Damen is usually open midday."</div><div class="drawer-actions"><button class="dbtn">Directions</button><button class="dbtn primary">Set Reminder</button></div></div>
+      </div>
+
+      <div class="meeting-item flagged" onclick="this.classList.toggle('open')">
+        <div class="meeting-body"><div class="meet-row1"><span class="meet-name">1:1 with Marcus</span><span class="meet-time">2:00–2:30 PM</span></div><div class="meet-sub">Direct Report · Google Meet</div><div class="meet-flag warn"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> No agenda set yet</div></div>
+        <div class="meet-drawer"><div class="drawer-label">Suggested Topics</div><div class="drawer-text">"Q2 OKR check-in and the Meta ROAS drop from standup. Marcus owns creative reporting."</div><div class="drawer-actions"><button class="dbtn primary">Add Agenda</button><button class="dbtn">Join Meet</button></div></div>
+      </div>
+
+      <div class="meeting-item personal" onclick="this.classList.toggle('open')">
+        <div class="meeting-body"><div class="meet-row1"><span class="meet-name">Cubs vs. Cardinals</span><span class="meet-time">7:05 PM</span></div><div class="meet-sub">Wrigley Field · Section 228, Row 6</div><div class="meet-flag info"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Leave by 6:15 · Cubs lead NL Central by 2</div></div>
+        <div class="meet-drawer"><div class="drawer-label">Tonight</div><div class="drawer-text">"Sellout crowd expected. Blue Line to Addison is fastest. Gates open 5:35."</div><div class="drawer-actions"><button class="dbtn">Transit</button><button class="dbtn">Tickets</button></div></div>
+      </div>
+    </div>
+
+    <!-- COL 2: Tasks + Life -->
+    <div class="d-col">
+      <div class="desktop-col-header">
+        <span class="desktop-col-title"><em>Tasks</em> &amp; Life</span>
+        <span class="sec-action">+ Add</span>
+      </div>
+
+      <div class="sec-hdr" style="padding-left:0; padding-top:0;">
+        <span class="sec-title">Priority Tasks</span>
+      </div>
+      <div class="scope-tabs">
+        <button class="stab active" onclick="setScopeTab(this)">Today</button>
+        <button class="stab" onclick="setScopeTab(this)">Weekly</button>
+        <button class="stab" onclick="setScopeTab(this)">Monthly</button>
+        <button class="stab" onclick="setScopeTab(this)">Q2</button>
+      </div>
+      <div class="card">
+        <div class="goal-label">Q2 Goal — AI Attribution Framework</div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check done"></div><div class="t-body"><div class="t-task done">Send Meridian pre-read deck for 10am</div><div class="t-meta"><span class="t-due">Due 9:30 AM</span><span class="t-pri pri-hi">Critical</span></div></div></div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Draft AI model brief for dev hand-off</div><div class="t-meta"><span class="t-due">Due Fri May 29</span><span class="t-pri pri-hi">High</span></div></div></div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Review Marcus's OKR draft before 2pm 1:1</div><div class="t-meta"><span class="t-due">Before 2pm</span><span class="t-pri pri-med">Medium</span></div></div></div>
+        <div class="goal-label">Monthly — Benchmarking Report</div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Pull May Google Ads export — CPL by campaign</div><div class="t-meta"><span class="t-due">Due May 28</span><span class="t-pri pri-hi">High</span></div></div></div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Finalize competitor ad spend analysis (Section 3)</div><div class="t-meta"><span class="t-due">Due June 3</span><span class="t-pri pri-med">Medium</span></div></div></div>
+        <div class="goal-label">Weekly — Personal</div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Order Sarah's birthday gift — June 3rd, 10 days away</div><div class="t-meta"><span class="t-due">Order today for delivery</span><span class="t-pri pri-hi">Urgent</span></div></div></div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Finish "Thinking in Bets" Ch. 4–6</div><div class="t-meta"><span class="t-due">This week</span><span class="t-pri pri-lo">Low</span></div></div></div>
+      </div>
+
+      <div class="sec-hdr" style="padding-left:0; padding-top:6px;">
+        <span class="sec-title">Meals Today</span>
+        <span class="sec-action">Plan Week</span>
+      </div>
+      <div class="card">
+        <div class="meal-row"><div class="meal-label-col"><span class="meal-lbl">Breakfast</span></div><div class="meal-content"><div class="meal-name">Avocado toast with soft egg</div><div class="meal-tag">~420 cal · 22g protein</div></div></div>
+        <div class="meal-row"><div class="meal-label-col"><span class="meal-lbl">Lunch</span></div><div class="meal-content"><div class="meal-name">Mediterranean grain bowl</div><div class="meal-tag">~580 cal · Quick · Post-haircut</div></div></div>
+        <div class="meal-row"><div class="meal-label-col"><span class="meal-lbl">Dinner</span></div><div class="meal-content"><div class="meal-name">Wrigley hot dog — don't overthink it</div><div class="meal-tag">Cubs night, enjoy it</div></div></div>
+      </div>
+      <button class="outline-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Generate Grocery List</button>
+
+      <div class="sec-hdr" style="padding-left:0; padding-top:6px;">
+        <span class="sec-title">Personal</span>
+      </div>
+      <div class="card">
+        <div class="gift-card">
+          <div class="gift-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+          <div class="gift-body"><div class="gift-title">Sarah's Birthday — June 3rd</div><div class="gift-sub">10 days away · Last year: Le Labo candle + Aesop skincare · Budget ~$120</div><button class="gift-btn">Order Gift Now</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 3: Feed -->
+    <div class="d-col">
+      <div class="desktop-col-header">
+        <span class="desktop-col-title"><em>Feed</em></span>
+        <span class="sec-action">Manage</span>
+      </div>
+
+      <div class="topic-row">
+        <span class="t-pill active" onclick="setTopicPill(this)">All</span>
+        <span class="t-pill" onclick="setTopicPill(this)">AI</span>
+        <span class="t-pill" onclick="setTopicPill(this)">Perf Mktg</span>
+        <span class="t-pill" onclick="setTopicPill(this)">Economy</span>
+        <span class="t-pill" onclick="setTopicPill(this)">Chicago</span>
+        <span class="t-pill" onclick="setTopicPill(this)">+ Follow</span>
+      </div>
+
+      <div class="claude-suggestion">
+        <div class="cs-label">Claude suggests</div>
+        <div class="cs-text">Based on your AI follows, consider adding "OpenAI product updates" — significant news this week relevant to your attribution work.</div>
+      </div>
+
+      <div class="card">
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">The Information · AI</span><span class="ni-age">2h ago</span></div><div class="ni-headline">Google DeepMind's reasoning model outperforms GPT-4o on ad optimization tasks</div><div class="ni-snippet">Implications for automated bidding and creative testing pipelines...</div></div>
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">Ad Age · Performance</span><span class="ni-age">4h ago</span></div><div class="ni-headline">Meta Advantage+ now accounts for 38% of spend among top 500 US advertisers</div><div class="ni-snippet">AI-native campaign structures raising new questions about creative control...</div></div>
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">WSJ · Economy</span><span class="ni-age">6h ago</span></div><div class="ni-headline">Fed minutes signal two rate cuts possible in H2 as inflation cools to 2.8%</div><div class="ni-snippet">Markets responded positively to signs the tightening cycle may be ending...</div></div>
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">Chicago Tribune</span><span class="ni-age">1h ago</span></div><div class="ni-headline">Cubs bullpen ranked 3rd in MLB after dominant May; Wrigley sellout tonight</div><div class="ni-snippet">Classic Wrigley atmosphere expected as the division rivalry heats up...</div></div>
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">Marketing Brew · AI</span><span class="ni-age">3h ago</span></div><div class="ni-headline">How leading agencies are structuring AI workflows for creative attribution</div><div class="ni-snippet">The hybrid model blending generative tools with first-party signal analysis...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /desktop -->
+
+
+<!-- ═══════════════════════════════════════
+     MOBILE LAYOUT
+═══════════════════════════════════════ -->
+<div class="mobile-shell mobile-only">
+
+  <div class="sticky-top" id="stickyTop">
+    <header class="hub-header" id="hubHeader">
+      <div class="hdr-full-content">
+        <div class="header-top">
+          <div><span class="brand-script">good morning</span><h1 class="brand-title">Morning <em>Hub</em></h1></div>
+          <div class="header-right"><div class="hdr-date">Sunday, May 24</div><div class="hdr-time" id="liveTimeFull">7:42 AM · Chicago</div></div>
+        </div>
+        <div class="hdr-greeting">You have a full day ahead — let's make it count.</div>
+      </div>
+      <div class="hdr-mini-content">
+        <span class="mini-brand">Morning <em>Hub</em></span>
+        <div class="mini-right">
+          <span class="mini-time" id="liveTimeMini">7:42 AM</span>
+          <button class="settings-btn" onclick="openSettings()" style="width:28px;height:28px;" title="Settings">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--stone)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+          <button class="mini-voice-btn" id="miniVoiceBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+        </div>
+      </div>
+    </header>
+    <div class="voice-bar" id="voiceBar">
+      <button class="voice-btn" id="voiceBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+      <div class="voice-text" id="voiceText">Ask — <span>"Prep for my 10am?"</span> · <span>"Order Sarah's gift"</span></div>
+      <div class="voice-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+
+  <div class="scroll-area" id="scrollArea">
+
+    <!-- DAY TAB -->
+    <div class="tab-section active" id="tab-day">
+      <div class="weather-card">
+        <div class="weather-top"><div class="w-temp">62<sup>°</sup></div><div class="w-right"><div class="w-condition">Partly Cloudy</div><div class="w-loc">Chicago · Lincoln Park</div></div></div>
+        <div class="w-stats"><span>H 71°</span><span>L 54°</span><span>Wind 12 mph</span><span>Rain 20%</span></div>
+        <div class="w-hourly">
+          <div class="w-hour"><div class="wh-time">Now</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div><div class="wh-temp">62°</div></div>
+          <div class="w-hour"><div class="wh-time">9am</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div><div class="wh-temp">65°</div></div>
+          <div class="w-hour"><div class="wh-time">11am</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div><div class="wh-temp">68°</div></div>
+          <div class="w-hour"><div class="wh-time">2pm</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div><div class="wh-temp">71°</div></div>
+          <div class="w-hour"><div class="wh-time">5pm</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg></div><div class="wh-temp">68°</div></div>
+          <div class="w-hour"><div class="wh-time">7pm</div><div class="wh-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><div class="wh-temp">62°</div></div>
+        </div>
+      </div>
+      <div class="sec-hdr"><span class="sec-title">Today's Schedule</span><span class="sec-action">+ Add</span></div>
+      <div class="day-summary-bar">5 events · Cubs game tonight at 7:05 · Busiest window 9–11am</div>
+      <div style="height:10px"></div>
+      <div class="meeting-item past" onclick="this.classList.toggle('open')"><div class="meeting-body"><div class="meet-row1"><span class="meet-name">Weekly Standup</span><span class="meet-time">7:00–7:30 AM</span></div><div class="meet-sub">Performance Team · Completed — tap to review</div></div><div class="meet-drawer"><div class="drawer-label">Summary</div><div class="drawer-text">"Q2 attribution discussed. Jordan flagged 12% drop in Meta ROAS week-over-week."</div><div class="drawer-actions"><button class="dbtn">Play</button><button class="dbtn">Transcript</button><button class="dbtn primary">Ask Agent</button></div></div></div>
+      <div class="now-line"><span class="now-label">Now</span><div class="now-rule"></div><div class="now-dot"></div></div>
+      <div class="meeting-item flagged" onclick="this.classList.toggle('open')"><div class="meeting-body"><div class="meet-row1"><span class="meet-name">Q2 Campaign Review</span><span class="meet-time">10:00–11:00 AM</span></div><div class="meet-sub">Meridian Health · Zoom</div><div class="meet-flag warn"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Deck not shared yet</div></div><div class="meet-drawer"><div class="drawer-label">Suggested Prep</div><div class="drawer-text">"Client will likely ask about CPL trends. Pull May report, creative performance tab ready."</div><div class="drawer-actions"><button class="dbtn">Open Deck</button><button class="dbtn">Join Zoom</button><button class="dbtn primary">Ask Agent</button></div></div></div>
+      <div class="meeting-item" onclick="this.classList.toggle('open')"><div class="meeting-body"><div class="meet-row1"><span class="meet-name">Haircut · Aidan at FORM</span><span class="meet-time">12:30 PM</span></div><div class="meet-sub">1123 N Damen Ave · Personal</div><div class="meet-flag info"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Leave by 12:15</div></div><div class="meet-drawer"><div class="drawer-label">Getting There</div><div class="drawer-text">"10 min drive from home. Street parking on Damen is usually open midday."</div><div class="drawer-actions"><button class="dbtn">Directions</button><button class="dbtn primary">Set Reminder</button></div></div></div>
+      <div class="meeting-item flagged" onclick="this.classList.toggle('open')"><div class="meeting-body"><div class="meet-row1"><span class="meet-name">1:1 with Marcus</span><span class="meet-time">2:00–2:30 PM</span></div><div class="meet-sub">Direct Report · Google Meet</div><div class="meet-flag warn"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> No agenda set yet</div></div><div class="meet-drawer"><div class="drawer-label">Suggested Topics</div><div class="drawer-text">"Q2 OKR check-in and the Meta ROAS drop from standup. Marcus owns creative reporting."</div><div class="drawer-actions"><button class="dbtn primary">Add Agenda</button><button class="dbtn">Join Meet</button></div></div></div>
+      <div class="meeting-item personal" onclick="this.classList.toggle('open')"><div class="meeting-body"><div class="meet-row1"><span class="meet-name">Cubs vs. Cardinals</span><span class="meet-time">7:05 PM</span></div><div class="meet-sub">Wrigley Field · Section 228, Row 6</div><div class="meet-flag info"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Leave by 6:15 · Cubs lead NL Central by 2</div></div><div class="meet-drawer"><div class="drawer-label">Tonight</div><div class="drawer-text">"Sellout crowd expected. Blue Line to Addison is fastest. Gates open 5:35."</div><div class="drawer-actions"><button class="dbtn">Transit</button><button class="dbtn">Tickets</button></div></div></div>
+      <div style="height:8px"></div>
+    </div>
+
+    <!-- TASKS TAB -->
+    <div class="tab-section" id="tab-tasks">
+      <div class="sec-hdr"><span class="sec-title">Priority Tasks</span><span class="sec-action">+ Add Task</span></div>
+      <div class="scope-tabs"><button class="stab active" onclick="setScopeTab(this)">Today</button><button class="stab" onclick="setScopeTab(this)">Weekly</button><button class="stab" onclick="setScopeTab(this)">Monthly</button><button class="stab" onclick="setScopeTab(this)">Q2</button></div>
+      <div class="card" style="margin-top:0">
+        <div class="goal-label">Q2 Goal — AI Attribution Framework</div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check done"></div><div class="t-body"><div class="t-task done">Send Meridian pre-read deck for 10am</div><div class="t-meta"><span class="t-due">Due 9:30 AM</span><span class="t-pri pri-hi">Critical</span></div></div></div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Draft AI model brief for dev hand-off</div><div class="t-meta"><span class="t-due">Due Fri May 29</span><span class="t-pri pri-hi">High</span></div></div></div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Review Marcus's OKR draft before 2pm 1:1</div><div class="t-meta"><span class="t-due">Before 2pm</span><span class="t-pri pri-med">Medium</span></div></div></div>
+        <div class="goal-label">Monthly — Benchmarking Report</div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Pull May Google Ads export — CPL by campaign</div><div class="t-meta"><span class="t-due">Due May 28</span><span class="t-pri pri-hi">High</span></div></div></div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Finalize competitor ad spend analysis (Section 3)</div><div class="t-meta"><span class="t-due">Due June 3</span><span class="t-pri pri-med">Medium</span></div></div></div>
+        <div class="goal-label">Weekly — Personal</div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Order Sarah's birthday gift — June 3rd, 10 days away</div><div class="t-meta"><span class="t-due">Order today for delivery</span><span class="t-pri pri-hi">Urgent</span></div></div></div>
+        <div class="todo-item" onclick="toggleTodo(this)"><div class="t-check"></div><div class="t-body"><div class="t-task">Finish "Thinking in Bets" Ch. 4–6</div><div class="t-meta"><span class="t-due">This week</span><span class="t-pri pri-lo">Low</span></div></div></div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+
+    <!-- LIFE TAB -->
+    <div class="tab-section" id="tab-life">
+      <div class="sec-hdr"><span class="sec-title">Meals Today</span><span class="sec-action">Plan Week</span></div>
+      <div class="card">
+        <div class="meal-row"><div class="meal-label-col"><span class="meal-lbl">Breakfast</span></div><div class="meal-content"><div class="meal-name">Avocado toast with soft egg</div><div class="meal-tag">~420 cal · 22g protein</div></div></div>
+        <div class="meal-row"><div class="meal-label-col"><span class="meal-lbl">Lunch</span></div><div class="meal-content"><div class="meal-name">Mediterranean grain bowl</div><div class="meal-tag">~580 cal · Quick · Post-haircut</div></div></div>
+        <div class="meal-row"><div class="meal-label-col"><span class="meal-lbl">Dinner</span></div><div class="meal-content"><div class="meal-name">Wrigley hot dog — don't overthink it</div><div class="meal-tag">Cubs night, enjoy it</div></div></div>
+      </div>
+      <button class="outline-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Generate Grocery List</button>
+      <div class="sec-hdr" style="padding-top:20px"><span class="sec-title">Personal</span><span class="sec-action">View All</span></div>
+      <div class="card"><div class="gift-card"><div class="gift-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div><div class="gift-body"><div class="gift-title">Sarah's Birthday — June 3rd</div><div class="gift-sub">10 days away · Last year: Le Labo candle + Aesop skincare · Budget ~$120</div><button class="gift-btn">Order Gift Now</button></div></div></div>
+      <div class="sec-hdr" style="padding-top:8px"><span class="sec-title">Upcoming</span></div>
+      <div class="card">
+        <div class="todo-item"><div class="t-body"><div class="t-task">Annual physical — schedule before end of June</div><div class="t-meta"><span class="t-due">Dr. Keller · Northwestern</span><span class="t-pri pri-med">Reminder</span></div></div></div>
+        <div class="todo-item"><div class="t-body"><div class="t-task">Dad's flight lands June 7th — confirm pickup</div><div class="t-meta"><span class="t-due">O'Hare · Terminal 3</span><span class="t-pri pri-med">Reminder</span></div></div></div>
+        <div class="todo-item" style="border-bottom:none"><div class="t-body"><div class="t-task">Renew renter's insurance — expires June 30</div><div class="t-meta"><span class="t-due">Auto-renewal off</span><span class="t-pri pri-hi">Action needed</span></div></div></div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+
+    <!-- FEED TAB -->
+    <div class="tab-section" id="tab-news">
+      <div class="sec-hdr"><span class="sec-title">Curated Feed</span><span class="sec-action">Manage</span></div>
+      <div class="topic-row"><span class="t-pill active" onclick="setTopicPill(this)">All</span><span class="t-pill" onclick="setTopicPill(this)">AI</span><span class="t-pill" onclick="setTopicPill(this)">Perf Mktg</span><span class="t-pill" onclick="setTopicPill(this)">Economy</span><span class="t-pill" onclick="setTopicPill(this)">Chicago</span><span class="t-pill" onclick="setTopicPill(this)">+ Follow</span></div>
+      <div class="claude-suggestion"><div class="cs-label">Claude suggests</div><div class="cs-text">Based on your AI follows, consider adding "OpenAI product updates" — significant news this week relevant to your attribution work.</div></div>
+      <div class="card">
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">The Information · AI</span><span class="ni-age">2h ago</span></div><div class="ni-headline">Google DeepMind's reasoning model outperforms GPT-4o on ad optimization tasks</div><div class="ni-snippet">Implications for automated bidding and creative testing pipelines...</div></div>
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">Ad Age · Performance</span><span class="ni-age">4h ago</span></div><div class="ni-headline">Meta Advantage+ now accounts for 38% of spend among top 500 US advertisers</div><div class="ni-snippet">AI-native campaign structures raising new questions about creative control...</div></div>
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">WSJ · Economy</span><span class="ni-age">6h ago</span></div><div class="ni-headline">Fed minutes signal two rate cuts possible in H2 as inflation cools to 2.8%</div><div class="ni-snippet">Markets responded positively to signs the tightening cycle may be ending...</div></div>
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">Chicago Tribune</span><span class="ni-age">1h ago</span></div><div class="ni-headline">Cubs bullpen ranked 3rd in MLB after dominant May; Wrigley sellout tonight</div><div class="ni-snippet">Classic Wrigley atmosphere expected as the division rivalry heats up...</div></div>
+        <div class="news-item"><div class="ni-row1"><span class="ni-source">Marketing Brew · AI</span><span class="ni-age">3h ago</span></div><div class="ni-headline">How leading agencies are structuring AI workflows for creative attribution</div><div class="ni-snippet">The hybrid model blending generative tools with first-party signal analysis...</div></div>
+      </div>
+      <div style="height:8px"></div>
+    </div>
+
+  </div><!-- /scroll-area -->
+
+  <nav class="bottom-nav">
+    <button class="nav-tab active" onclick="switchTab('day',this)"><div class="nav-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8C8880" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div><span class="nav-label">Day</span></button>
+    <button class="nav-tab" onclick="switchTab('tasks',this)"><div class="nav-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8C8880" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><span class="nav-label">Tasks</span></button>
+    <button class="nav-tab" onclick="switchTab('life',this)"><div class="nav-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8C8880" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div><span class="nav-label">Life</span></button>
+    <button class="nav-tab" onclick="switchTab('news',this)"><div class="nav-icon-wrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8C8880" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg></div><span class="nav-label">Feed</span></button>
+  </nav>
+
+</div><!-- /mobile-shell -->
+
+<script>
+  // ── Detect layout & show correct shell ──
+  function applyLayout() {
+    const w = window.innerWidth;
+    const desktop = document.querySelector('.desktop-only');
+    const mobile  = document.querySelector('.mobile-shell');
+    if (w >= 600) {
+      desktop.style.display = 'flex';
+      mobile.style.display  = 'none';
+    } else {
+      desktop.style.display = 'none';
+      mobile.style.display  = 'flex';
+    }
+  }
+  applyLayout();
+  window.addEventListener('resize', applyLayout);
+
+  // ── Clock ──
+  function tick() {
+    const d  = new Date();
+    let h    = d.getHours(), m = d.getMinutes().toString().padStart(2,'0');
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    const full = `${h}:${m} ${ap} · Chicago`;
+    const mini = `${h}:${m} ${ap}`;
+    // mobile
+    const lf = document.getElementById('liveTimeFull');
+    const lm = document.getElementById('liveTimeMini');
+    if (lf) lf.textContent = full;
+    if (lm) lm.textContent = mini;
+    // desktop
+    const dt = document.getElementById('dtimeDesk');
+    if (dt) dt.textContent = full;
+  }
+  tick(); setInterval(tick, 30000);
+
+  // ── Mobile scroll-collapse ──
+  const scrollArea = document.getElementById('scrollArea');
+  const hubHeader  = document.getElementById('hubHeader');
+  const voiceBar   = document.getElementById('voiceBar');
+  const stickyTop  = document.getElementById('stickyTop');
+  let ticking = false;
+  if (scrollArea) {
+    scrollArea.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const mini = scrollArea.scrollTop > 40;
+          hubHeader.classList.toggle('mini', mini);
+          voiceBar.classList.toggle('hidden', mini);
+          stickyTop.classList.toggle('scrolled', mini);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+  }
+
+  // ── Mobile tab switching ──
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(b => {
+      b.classList.remove('active');
+      b.querySelector('svg').setAttribute('stroke','#8C8880');
+    });
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+    btn.querySelector('svg').setAttribute('stroke','#B5622A');
+    if (scrollArea) scrollArea.scrollTop = 0;
+    if (hubHeader) hubHeader.classList.remove('mini');
+    if (voiceBar)  voiceBar.classList.remove('hidden');
+    if (stickyTop) stickyTop.classList.remove('scrolled');
+  }
+  const firstTab = document.querySelector('.nav-tab.active svg');
+  if (firstTab) firstTab.setAttribute('stroke','#B5622A');
+
+  // ── Shared: scope tabs ──
+  function setScopeTab(btn) {
+    btn.closest('.scope-tabs').querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // ── Shared: topic pills ──
+  function setTopicPill(el) {
+    el.closest('.topic-row').querySelectorAll('.t-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // ── Shared: todo toggle ──
+  function toggleTodo(item) {
+    item.querySelector('.t-check').classList.toggle('done');
+    item.querySelector('.t-task').classList.toggle('done');
+  }
+
+  // ── Voice ──
+  function activateVoice(textEl, btnEl) {
+    if (!textEl || !btnEl) return;
+    const orig = textEl.innerHTML;
+    btnEl.style.background = '#C97A45';
+    textEl.innerHTML = '<span>Listening…</span>';
+    setTimeout(() => {
+      textEl.innerHTML = orig;
+      btnEl.style.background = '';
+    }, 2500);
+  }
+  const vBtn  = document.getElementById('voiceBtn');
+  const vText = document.getElementById('voiceText');
+  const mBtn  = document.getElementById('miniVoiceBtn');
+  const dBtn  = document.getElementById('deskVoiceBtn');
+  const dBtnB = document.getElementById('deskVoiceBtnBar');
+  const dText = document.getElementById('deskVoiceText');
+  if (vBtn)  vBtn.addEventListener('click',  () => activateVoice(vText, vBtn));
+  if (mBtn)  mBtn.addEventListener('click',  () => activateVoice(vText, mBtn));
+  if (dBtn)  dBtn.addEventListener('click',  () => activateVoice(dText, dBtnB));
+  if (dBtnB) dBtnB.addEventListener('click', () => activateVoice(dText, dBtnB));
+
+  // ── Settings panel ──
+  function openSettings() {
+    document.getElementById('settingsPanel').classList.add('open');
+    document.getElementById('settingsBackdrop').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSettings() {
+    document.getElementById('settingsPanel').classList.remove('open');
+    document.getElementById('settingsBackdrop').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function switchSpTab(name, btn) {
+    document.querySelectorAll('.sp-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sp-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('sp-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+  function addGoal(horizon) {
+    alert('Add ' + horizon + ' goal — this will open an inline form in the real build.');
+  }
+  // ESC closes panel
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
+
+</script>
+
+<!-- ═══════════════════════════════════════
+     SETTINGS / GOALS PANEL
+═══════════════════════════════════════ -->
+<div class="settings-backdrop" id="settingsBackdrop" onclick="closeSettings()"></div>
+
+<div class="settings-panel" id="settingsPanel">
+
+  <div class="sp-header">
+    <div class="sp-title-group">
+      <span class="sp-script">configure</span>
+      <h2 class="sp-title">Goals &amp; <em>Context</em></h2>
+    </div>
+    <button class="sp-close" onclick="closeSettings()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="sp-tabs">
+    <button class="sp-tab active" onclick="switchSpTab('goals', this)">Goals</button>
+    <button class="sp-tab" onclick="switchSpTab('context', this)">Context</button>
+    <button class="sp-tab" onclick="switchSpTab('prefs', this)">Preferences</button>
+  </div>
+
+  <div class="sp-body">
+
+    <!-- ── GOALS ── -->
+    <div class="sp-section active" id="sp-goals">
+
+      <div class="horizon-block">
+        <div class="horizon-label">
+          Quarterly · Q2 2025
+          <span onclick="addGoal('quarterly')">+ Add goal</span>
+        </div>
+
+        <div class="goal-card">
+          <div class="goal-card-top">
+            <div class="goal-card-title">Launch AI Attribution Framework for performance marketing clients</div>
+            <span class="goal-status status-on-track">On track</span>
+          </div>
+          <div class="goal-metric">Success metric: Framework live and tested with 2 clients by June 30</div>
+          <div class="goal-progress-bar"><div class="goal-progress-fill" style="width:42%"></div></div>
+          <div class="goal-card-actions">
+            <button class="goal-action-btn">Edit</button>
+            <button class="goal-action-btn">Add milestone</button>
+            <button class="goal-action-btn primary">Ask Claude to assess</button>
+          </div>
+        </div>
+
+        <div class="goal-card">
+          <div class="goal-card-top">
+            <div class="goal-card-title">Build and ship Morning Hub v1 as a working PWA</div>
+            <span class="goal-status status-on-track">On track</span>
+          </div>
+          <div class="goal-metric">Success metric: Live on Vercel, daily active use by end of Q2</div>
+          <div class="goal-progress-bar"><div class="goal-progress-fill" style="width:28%"></div></div>
+          <div class="goal-card-actions">
+            <button class="goal-action-btn">Edit</button>
+            <button class="goal-action-btn">Add milestone</button>
+            <button class="goal-action-btn primary">Ask Claude to assess</button>
+          </div>
+        </div>
+
+        <button class="add-goal-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add quarterly goal
+        </button>
+      </div>
+
+      <div class="horizon-block">
+        <div class="horizon-label">
+          Monthly · May 2025
+          <span onclick="addGoal('monthly')">+ Add goal</span>
+        </div>
+
+        <div class="goal-card">
+          <div class="goal-card-top">
+            <div class="goal-card-title">Complete competitive benchmarking report for Q2 review</div>
+            <span class="goal-status status-at-risk">At risk</span>
+          </div>
+          <div class="goal-metric">Success metric: Delivered to leadership by May 31</div>
+          <div class="goal-progress-bar"><div class="goal-progress-fill terra" style="width:55%"></div></div>
+          <div class="goal-card-actions">
+            <button class="goal-action-btn">Edit</button>
+            <button class="goal-action-btn primary">Ask Claude to assess</button>
+          </div>
+        </div>
+
+        <button class="add-goal-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add monthly goal
+        </button>
+      </div>
+
+      <div class="horizon-block">
+        <div class="horizon-label">
+          Weekly · May 19–25
+          <span onclick="addGoal('weekly')">+ Add goal</span>
+        </div>
+
+        <div class="goal-card">
+          <div class="goal-card-top">
+            <div class="goal-card-title">Close the Meridian campaign review and lock next sprint</div>
+            <span class="goal-status status-on-track">On track</span>
+          </div>
+          <div class="goal-metric">Success metric: Client sign-off by EOW</div>
+          <div class="goal-progress-bar"><div class="goal-progress-fill" style="width:70%"></div></div>
+          <div class="goal-card-actions">
+            <button class="goal-action-btn">Edit</button>
+            <button class="goal-action-btn primary">Ask Claude to assess</button>
+          </div>
+        </div>
+
+        <button class="add-goal-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add weekly goal
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ── CONTEXT ── -->
+    <div class="sp-section" id="sp-context">
+
+      <p class="context-intro">This is what Claude reads before every briefing. Be direct — the more specific you are, the better the prioritization.</p>
+
+      <label class="context-field-label">Role &amp; current focus</label>
+      <textarea class="context-textarea" rows="3" placeholder="e.g. VP of Performance Marketing at [company]. Currently focused on building AI-native workflows and scaling attribution capabilities across client accounts.">VP of Performance Marketing. Currently leading two workstreams: AI attribution framework (client-facing) and Morning Hub product build (personal). Primary clients are Meridian Health and two mid-market e-commerce brands.</textarea>
+
+      <label class="context-field-label">Active projects</label>
+      <textarea class="context-textarea" rows="4" placeholder="List your 3–5 most active projects with a one-line status each.">1. Meridian Health Q2 Campaign — In review, deck pending client sign-off
+2. AI Attribution Framework — Dev brief in progress, targeting June launch
+3. Benchmarking Report — Section 3 incomplete, at risk for May 31
+4. Morning Hub PWA — Design mockup complete, moving to React build</textarea>
+
+      <label class="context-field-label">Key people</label>
+      <textarea class="context-textarea" rows="3" placeholder="Names and relationships Claude should know about.">Marcus — direct report, owns creative reporting and weekly standup
+Jordan — performance team, flags data anomalies
+Sarah — sister, birthday June 3rd</textarea>
+
+      <label class="context-field-label">Working style &amp; constraints</label>
+      <textarea class="context-textarea" rows="3" placeholder="How you work best, blocks, recurring commitments.">Deep work before 10am. Don't schedule anything before 8:30. Friday afternoons protected for reading and planning. Cubs season — check home game schedule before Monday meetings.</textarea>
+
+      <label class="context-field-label">What Claude should always flag</label>
+      <div class="context-tag-row">
+        <span class="context-tag">Deadline conflicts <span class="tag-x">×</span></span>
+        <span class="context-tag">Unprepped client meetings <span class="tag-x">×</span></span>
+        <span class="context-tag">Missing agendas <span class="tag-x">×</span></span>
+        <span class="context-tag">Personal dates approaching <span class="tag-x">×</span></span>
+        <span class="context-tag">+ Add flag</span>
+      </div>
+      <p class="context-hint">These appear as orange flags on your daily briefing.</p>
+
+    </div>
+
+    <!-- ── PREFERENCES ── -->
+    <div class="sp-section" id="sp-prefs">
+
+      <label class="context-field-label">News topics &amp; follows</label>
+      <div class="context-tag-row">
+        <span class="context-tag">AI &amp; LLMs <span class="tag-x">×</span></span>
+        <span class="context-tag">Performance marketing <span class="tag-x">×</span></span>
+        <span class="context-tag">Chicago <span class="tag-x">×</span></span>
+        <span class="context-tag">Economy <span class="tag-x">×</span></span>
+        <span class="context-tag">Cubs <span class="tag-x">×</span></span>
+        <span class="context-tag">Ethan Mollick <span class="tag-x">×</span></span>
+        <span class="context-tag">Lenny Rachitsky <span class="tag-x">×</span></span>
+        <span class="context-tag">+ Add topic</span>
+      </div>
+
+      <label class="context-field-label" style="margin-top:24px">Location</label>
+      <input class="context-input" type="text" value="Lincoln Park, Chicago, IL" />
+
+      <label class="context-field-label">Wake time (for briefing tone)</label>
+      <input class="context-input" type="text" value="6:30 AM" />
+
+      <label class="context-field-label">Morning Hub greeting style</label>
+      <div class="context-tag-row" style="margin-top:6px">
+        <span class="context-tag" style="background:rgba(30,30,30,0.88);color:#fff;border-color:transparent">Concise</span>
+        <span class="context-tag">Warm</span>
+        <span class="context-tag">Detailed</span>
+      </div>
+      <p class="context-hint">Controls how much Claude writes in your morning greeting and meeting prep notes.</p>
+
+    </div>
+
+  </div><!-- /sp-body -->
+
+  <div class="sp-footer">
+    <button class="sp-cancel-btn" onclick="closeSettings()">Cancel</button>
+    <button class="sp-save-btn">Save &amp; Update Briefing</button>
+  </div>
+
+</div>
+
+</body>
+</html>

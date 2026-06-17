@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morning Briefing — API Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500;600&family=Dancing+Script:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#FAF8F4; --surface:rgba(255,255,255,0.70); --surface-2:#F5F1EB;
+  --border:rgba(255,255,255,0.50); --border-s:rgba(140,136,128,0.25);
+  --sage:#4A5C45; --charcoal:#1E1E1E; --terra:#B5622A; --terra-light:#C97A45;
+  --stone:#8C8880; --stone-light:#B5B2AD;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Jost',sans-serif; --script:'Dancing Script',cursive;
+  --r:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:var(--sans);color:var(--charcoal)}
+body{
+  background-color:#EAE4D6;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 15% 20%,rgba(74,92,69,.20) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 60% at 85% 75%,rgba(181,98,42,.13) 0%,transparent 55%),
+    radial-gradient(ellipse 70% 40% at 50% 50%,rgba(242,235,227,.45) 0%,transparent 70%);
+  background-attachment:fixed;
+  min-height:100vh;
+  padding:32px 24px 60px;
+}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--stone-light);border-radius:2px}
+
+/* layout */
+.shell{max-width:860px;margin:0 auto}
+
+/* header */
+.page-header{margin-bottom:32px}
+.page-script{font-family:var(--script);font-size:13px;color:var(--stone);display:block;margin-bottom:2px}
+.page-title{font-family:var(--serif);font-size:36px;font-weight:300;letter-spacing:-.01em;line-height:1}
+.page-title em{font-style:italic;color:var(--terra)}
+.page-sub{font-size:11px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;color:var(--stone);margin-top:8px}
+
+/* glass card */
+.glass{
+  background:var(--surface);
+  backdrop-filter:blur(20px) saturate(1.8);
+  -webkit-backdrop-filter:blur(20px) saturate(1.8);
+  border:1px solid var(--border);
+  box-shadow:0 1px 0 rgba(255,255,255,.92) inset,0 4px 20px rgba(30,20,10,.07);
+  border-radius:var(--r);
+  overflow:hidden;
+  margin-bottom:16px;
+}
+
+/* section labels */
+.sec-label{font-size:9px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--stone)}
+
+/* two-col layout */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:640px){.cols{grid-template-columns:1fr}}
+
+/* input panel */
+.panel-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border-s);display:flex;align-items:baseline;justify-content:space-between}
+.panel-body{padding:16px 20px}
+
+.input-group{margin-bottom:14px}
+.input-group:last-child{margin-bottom:0}
+.input-label{font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--stone);display:block;margin-bottom:6px}
+.input-field{
+  width:100%;padding:9px 12px;
+  background:rgba(255,255,255,.5);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.6);
+  border-radius:8px;
+  font-family:var(--sans);font-size:12px;color:var(--charcoal);
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset;
+  transition:border-color .18s,box-shadow .18s;
+  resize:vertical;
+}
+.input-field:focus{outline:none;border-color:rgba(181,98,42,.35);box-shadow:0 0 0 3px rgba(181,98,42,.08),0 1px 0 rgba(255,255,255,.9) inset}
+textarea.input-field{min-height:72px;line-height:1.6}
+
+/* run button */
+.run-btn{
+  width:100%;padding:14px;
+  background:rgba(30,30,30,.88);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;color:#fff;
+  font-family:var(--sans);font-size:10px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,.18),0 1px 0 rgba(255,255,255,.1) inset;
+  transition:opacity .18s,transform .15s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-bottom:16px;
+}
+.run-btn:hover{opacity:.85}
+.run-btn:active{transform:scale(.98)}
+.run-btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+/* loading */
+.loading{
+  text-align:center;padding:40px 20px;
+  display:none;
+}
+.loading.show{display:block}
+.loading-script{font-family:var(--script);font-size:18px;color:var(--stone);margin-bottom:8px}
+.loading-sub{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--stone-light)}
+.pulse-dots{display:flex;justify-content:center;gap:6px;margin:16px 0}
+.pulse-dots span{width:6px;height:6px;border-radius:50%;background:var(--terra);animation:pulse 1.4s ease-in-out infinite}
+.pulse-dots span:nth-child(2){animation-delay:.2s}
+.pulse-dots span:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+
+/* results */
+.results{display:none}
+.results.show{display:block}
+
+/* briefing header */
+.briefing-hdr{
+  padding:20px 24px;
+  border-bottom:1px solid var(--border-s);
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+}
+.briefing-greeting{font-family:var(--serif);font-size:22px;font-weight:300;font-style:italic;color:var(--charcoal);line-height:1.4}
+.briefing-meta{text-align:right;flex-shrink:0}
+.bm-date{font-family:var(--serif);font-size:14px;color:var(--charcoal)}
+.bm-count{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--stone);margin-top:3px}
+
+/* priority items */
+.priority-list{padding:12px 0}
+.priority-item{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 20px;
+  border-bottom:1px solid rgba(140,136,128,.10);
+  transition:background .15s;
+}
+.priority-item:last-child{border-bottom:none}
+.priority-item:hover{background:rgba(255,255,255,.35)}
+
+.pi-rank{
+  width:24px;height:24px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:11px;font-weight:600;
+  margin-top:1px;
+}
+.rank-1{background:rgba(181,98,42,.15);color:var(--terra)}
+.rank-2{background:rgba(181,98,42,.10);color:var(--terra-light)}
+.rank-3{background:rgba(140,136,128,.12);color:var(--stone)}
+.rank-n{background:rgba(140,136,128,.08);color:var(--stone-light)}
+
+.pi-body{flex:1;min-width:0}
+.pi-row1{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:3px}
+.pi-title{font-size:13px;font-weight:500;color:var(--charcoal);letter-spacing:.01em}
+.pi-type{font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);flex-shrink:0}
+.pi-rationale{font-family:var(--serif);font-size:13px;font-style:italic;color:var(--stone);line-height:1.5;margin-bottom:6px}
+.pi-tags{display:flex;gap:5px;flex-wrap:wrap}
+.pi-tag{
+  font-size:8px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 7px;border-radius:3px;
+}
+.tag-goal{background:rgba(74,92,69,.10);color:var(--sage);border:1px solid rgba(74,92,69,.14)}
+.tag-flag{background:rgba(181,98,42,.10);color:var(--terra);border:1px solid rgba(181,98,42,.16)}
+.tag-deprio{background:rgba(140,136,128,.09);color:var(--stone-light);border:1px solid rgba(140,136,128,.14)}
+.tag-partial{background:rgba(201,122,69,.10);color:var(--terra-light);border:1px solid rgba(201,122,69,.16)}
+
+/* score bar */
+.score-bar-wrap{display:flex;align-items:center;gap:8px;margin-top:7px}
+.score-bar{flex:1;height:2px;background:rgba(140,136,128,.15);border-radius:1px;overflow:hidden}
+.score-fill{height:100%;border-radius:1px;background:linear-gradient(90deg,var(--sage),rgba(74,92,69,.5));transition:width .6s ease}
+.score-fill.terra{background:linear-gradient(90deg,var(--terra),rgba(181,98,42,.5))}
+.score-num{font-size:9px;font-weight:500;color:var(--stone-light);flex-shrink:0;width:28px;text-align:right}
+
+/* flags panel */
+.flags-panel{padding:14px 20px}
+.flag-item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 0;border-bottom:1px solid rgba(140,136,128,.10);
+}
+.flag-item:last-child{border-bottom:none}
+.flag-dot{width:7px;height:7px;border-radius:50%;background:var(--terra);flex-shrink:0;margin-top:5px;box-shadow:0 0 6px rgba(181,98,42,.4)}
+.flag-text{font-family:var(--serif);font-size:13px;font-style:italic;color:var(--charcoal);line-height:1.5}
+.flag-rule{font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--stone-light);margin-top:2px}
+
+/* raw toggle */
+.raw-toggle{
+  font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--stone);background:transparent;border:1px solid var(--border-s);
+  border-radius:6px;padding:5px 12px;cursor:pointer;transition:all .15s;
+  margin:12px 20px;display:inline-block;
+}
+.raw-toggle:hover{color:var(--charcoal);border-color:rgba(140,136,128,.4)}
+.raw-block{
+  display:none;margin:0 20px 16px;
+  background:rgba(30,30,30,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border-radius:8px;padding:16px;
+  font-family:monospace;font-size:11px;line-height:1.7;color:rgba(255,255,255,.75);
+  overflow-x:auto;white-space:pre-wrap;word-break:break-all;
+  border:1px solid rgba(255,255,255,.08);
+}
+.raw-block.show{display:block}
+
+/* error */
+.error-box{
+  padding:20px 24px;
+  background:rgba(181,98,42,.08);border-radius:var(--r);
+  border:1px solid rgba(181,98,42,.18);
+  font-family:var(--serif);font-size:14px;font-style:italic;color:var(--terra);
+  line-height:1.6;display:none;margin-bottom:16px;
+}
+.error-box.show{display:block}
+
+/* prompt preview */
+.prompt-preview{
+  font-family:monospace;font-size:10px;line-height:1.7;
+  color:rgba(255,255,255,.65);
+  background:rgba(30,30,30,.80);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:14px;
+  overflow-x:auto;white-space:pre-wrap;word-break:break-all;
+  max-height:200px;overflow-y:auto;
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="page-header">
+    <span class="page-script">morning hub</span>
+    <h1 class="page-title">Briefing <em>API</em></h1>
+    <div class="page-sub">Context-aware prioritization · Claude Sonnet 4.6</div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="cols">
+
+    <!-- Context snapshot -->
+    <div class="glass">
+      <div class="panel-hdr">
+        <span class="sec-label">Context snapshot</span>
+        <span style="font-size:9px;color:var(--stone-light);letter-spacing:.06em">goals · projects · flags</span>
+      </div>
+      <div class="panel-body">
+        <div class="input-group">
+          <label class="input-label">Active goals (Q2 → Monthly → Weekly)</label>
+          <textarea class="input-field" id="goalsInput" rows="5">Q2: Launch AI attribution framework — on-track, deadline Jun 30
+Q2: Ship Morning Hub PWA — on-track, deadline Jun 30
+Monthly: Complete benchmarking report — AT RISK, deadline May 31
+Weekly: Close Meridian campaign review — on-track, EOW</textarea>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Active projects</label>
+          <textarea class="input-field" id="projectsInput" rows="4">Meridian Health Q2 Campaign → goal: attribution framework, DIRECT, health: yellow
+AI Attribution Framework → goal: q2-attribution, DIRECT, health: green
+Benchmarking Report → goal: monthly-report, DIRECT, health: red
+Morning Hub PWA → goal: q2-hub, DIRECT, health: green</textarea>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Flags (always surface these)</label>
+          <textarea class="input-field" id="flagsInput" rows="3">deadline_conflicts, unprepped_client_meetings, missing_agendas, personal_dates_approaching, at_risk_goal_tasks</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today's data -->
+    <div class="glass">
+      <div class="panel-hdr">
+        <span class="sec-label">Today's data</span>
+        <span style="font-size:9px;color:var(--stone-light);letter-spacing:.06em">calendar · tasks</span>
+      </div>
+      <div class="panel-body">
+        <div class="input-group">
+          <label class="input-label">Calendar events (today)</label>
+          <textarea class="input-field" id="calendarInput" rows="6">7:00am — Weekly Standup (Performance Team, completed)
+10:00am — Q2 Campaign Review (Meridian Health, client, Zoom) — NO PREP NOTES
+12:30pm — Haircut, Aidan at FORM, personal
+2:00pm — 1:1 with Marcus (direct report) — NO AGENDA SET
+4:00pm — Deep work block
+7:05pm — Cubs vs Cardinals, Wrigley, personal</textarea>
+        </div>
+        <div class="input-group">
+          <label class="input-label">Task list</label>
+          <textarea class="input-field" id="tasksInput" rows="6">Send Meridian pre-read deck — due 9:30am TODAY
+Draft AI model brief for dev hand-off — due May 29
+Review Marcus OKR draft — before 2pm today
+Pull May Google Ads export CPL data — due May 28
+Finalize competitor analysis Section 3 — due June 3
+Order Sarah birthday gift — due today (birthday June 3, 10 days)
+Schedule annual physical — due end of June
+Finish Thinking in Bets Ch 4-6 — this week</textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt preview toggle -->
+  <div class="glass" style="margin-bottom:16px">
+    <div class="panel-hdr" style="cursor:pointer" onclick="togglePrompt()">
+      <span class="sec-label">System prompt preview</span>
+      <span id="promptToggleLabel" style="font-size:9px;color:var(--terra);letter-spacing:.1em;text-transform:uppercase;font-weight:500">Show</span>
+    </div>
+    <div id="promptPreviewWrap" style="display:none;padding:0 20px 16px">
+      <div class="prompt-preview" id="promptPreviewEl"></div>
+    </div>
+  </div>
+
+  <!-- Run -->
+  <button class="run-btn" id="runBtn" onclick="runBriefing()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    Generate morning briefing
+  </button>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Loading -->
+  <div class="glass loading" id="loadingEl">
+    <div class="loading-script">reading your day...</div>
+    <div class="pulse-dots"><span></span><span></span><span></span></div>
+    <div class="loading-sub">Weighing goals · scoring items · checking flags</div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="resultsEl">
+
+    <!-- Briefing header -->
+    <div class="glass" id="briefingHeader"></div>
+
+    <!-- Flags -->
+    <div class="glass" id="flagsPanel" style="display:none">
+      <div class="panel-hdr">
+        <span class="sec-label">Flags</span>
+        <span style="font-size:9px;color:var(--terra);font-weight:500;letter-spacing:.1em;text-transform:uppercase" id="flagCount"></span>
+      </div>
+      <div class="flags-panel" id="flagsList"></div>
+    </div>
+
+    <!-- Priority list -->
+    <div class="glass" id="priorityPanel">
+      <div class="panel-hdr">
+        <span class="sec-label">Prioritized items</span>
+        <span style="font-size:9px;color:var(--stone-light);letter-spacing:.06em" id="itemCount"></span>
+      </div>
+      <div class="priority-list" id="priorityList"></div>
+    </div>
+
+    <!-- Raw JSON toggle -->
+    <button class="raw-toggle" onclick="toggleRaw()">View raw JSON response</button>
+    <div class="raw-block" id="rawBlock"></div>
+
+  </div>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = (goals, projects, flags, calendar, tasks) => `You are the intelligence layer of a personal morning briefing hub. Your job is to read the user's goals, projects, and today's schedule, then return a structured prioritization of every item — tasks and calendar events — ranked by how directly each one advances the user's active goals.
+
+GOALS (source of truth — everything is weighed against these):
+${goals}
+
+ACTIVE PROJECTS (with goal alignment):
+${projects}
+
+FLAG RULES (always surface these conditions regardless of priority score):
+${flags}
+
+TODAY'S CALENDAR:
+${calendar}
+
+TODAY'S TASKS:
+${tasks}
+
+PRIORITIZATION RULES:
+1. Items directly advancing an active goal → high priority score (75–100)
+2. Items touching a goal-linked project but not directly advancing the goal → medium score (40–74), mark alignment as "partial", include in flags for user decision
+3. Items with no goal connection → low score (0–39), mark as deprioritized
+4. Flag rule matches → always surface in the flags array, regardless of score
+5. Constraints: user has deep work before 10am, earliest meeting 8:30am, protected Friday afternoons
+6. Personal items (health, relationships, finance) are scored on a separate 0–100 scale and never compete directly with work goals
+
+Respond ONLY with a valid JSON object. No preamble, no markdown, no explanation outside the JSON. The schema:
+
+{
+  "greeting": "one warm sentence acknowledging the shape of the day, in first person as the hub",
+  "date": "Sunday, May 24",
+  "summary": "2-3 sentence plain-language briefing of what matters most today and why",
+  "flags": [
+    {
+      "rule": "flag_rule_name",
+      "text": "plain explanation of what triggered this flag",
+      "item": "the calendar event or task name"
+    }
+  ],
+  "items": [
+    {
+      "title": "item name",
+      "type": "task | meeting | personal",
+      "priority_score": 0-100,
+      "goal_alignment": "direct | partial | none",
+      "goal_ref": "goal name this maps to, or null",
+      "rationale": "one sentence explaining the score in plain language",
+      "flagged": true | false,
+      "deprioritized": true | false
+    }
+  ]
+}
+
+Items must be sorted by priority_score descending. Include every task and meeting. Do not omit anything.`;
+
+function buildPrompt() {
+  return SYSTEM_PROMPT(
+    document.getElementById('goalsInput').value.trim(),
+    document.getElementById('projectsInput').value.trim(),
+    document.getElementById('flagsInput').value.trim(),
+    document.getElementById('calendarInput').value.trim(),
+    document.getElementById('tasksInput').value.trim()
+  );
+}
+
+function togglePrompt() {
+  const wrap = document.getElementById('promptPreviewWrap');
+  const label = document.getElementById('promptToggleLabel');
+  const showing = wrap.style.display !== 'none';
+  wrap.style.display = showing ? 'none' : 'block';
+  label.textContent = showing ? 'Show' : 'Hide';
+  if (!showing) {
+    document.getElementById('promptPreviewEl').textContent = buildPrompt();
+  }
+}
+
+async function runBriefing() {
+  const btn = document.getElementById('runBtn');
+  const loading = document.getElementById('loadingEl');
+  const results = document.getElementById('resultsEl');
+  const errorBox = document.getElementById('errorBox');
+
+  btn.disabled = true;
+  loading.classList.add('show');
+  results.classList.remove('show');
+  errorBox.classList.remove('show');
+
+  const prompt = buildPrompt();
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content?.[0]?.text || '';
+
+    // Strip any accidental markdown fences
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    renderResults(parsed, clean);
+
+  } catch (err) {
+    errorBox.textContent = `Something went wrong: ${err.message}. Check the console for details.`;
+    errorBox.classList.add('show');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    loading.classList.remove('show');
+  }
+}
+
+function renderResults(data, rawJson) {
+  // Header
+  document.getElementById('briefingHeader').innerHTML = `
+    <div class="briefing-hdr">
+      <div class="briefing-greeting">${escHtml(data.greeting)}</div>
+      <div class="briefing-meta">
+        <div class="bm-date">${escHtml(data.date || '')}</div>
+        <div class="bm-count">${(data.items||[]).length} items scored</div>
+      </div>
+    </div>
+    ${data.summary ? `<div style="padding:12px 24px 16px;font-family:var(--serif);font-size:14px;color:var(--stone);line-height:1.65;border-top:1px solid var(--border-s)">${escHtml(data.summary)}</div>` : ''}
+  `;
+
+  // Flags
+  const flags = data.flags || [];
+  const flagsPanel = document.getElementById('flagsPanel');
+  if (flags.length) {
+    document.getElementById('flagCount').textContent = `${flags.length} active`;
+    document.getElementById('flagsList').innerHTML = flags.map(f => `
+      <div class="flag-item">
+        <div class="flag-dot"></div>
+        <div>
+          <div class="flag-text">${escHtml(f.text)}</div>
+          <div class="flag-rule">${escHtml(f.rule)} · ${escHtml(f.item || '')}</div>
+        </div>
+      </div>
+    `).join('');
+    flagsPanel.style.display = 'block';
+  } else {
+    flagsPanel.style.display = 'none';
+  }
+
+  // Items
+  const items = (data.items || []).sort((a,b) => (b.priority_score||0)-(a.priority_score||0));
+  document.getElementById('itemCount').textContent = `${items.length} items · sorted by goal alignment`;
+
+  document.getElementById('priorityList').innerHTML = items.map((item, i) => {
+    const rank = i + 1;
+    const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-n';
+    const score = item.priority_score || 0;
+    const isHigh = score >= 65;
+    const fillClass = isHigh ? 'terra' : '';
+    const opacity = item.deprioritized ? 'opacity:.55;' : '';
+
+    const tags = [];
+    if (item.goal_ref && item.goal_alignment === 'direct') tags.push(`<span class="pi-tag tag-goal">${escHtml(item.goal_ref)}</span>`);
+    if (item.goal_alignment === 'partial') tags.push(`<span class="pi-tag tag-partial">Partial — your call</span>`);
+    if (item.flagged) tags.push(`<span class="pi-tag tag-flag">Flagged</span>`);
+    if (item.deprioritized) tags.push(`<span class="pi-tag tag-deprio">Deprioritized</span>`);
+
+    return `
+      <div class="priority-item" style="${opacity}">
+        <div class="pi-rank ${rankClass}">${rank}</div>
+        <div class="pi-body">
+          <div class="pi-row1">
+            <span class="pi-title">${escHtml(item.title)}</span>
+            <span class="pi-type">${escHtml(item.type || '')}</span>
+          </div>
+          <div class="pi-rationale">${escHtml(item.rationale || '')}</div>
+          <div class="score-bar-wrap">
+            <div class="score-bar"><div class="score-fill ${fillClass}" style="width:${score}%"></div></div>
+            <div class="score-num">${score}</div>
+          </div>
+          ${tags.length ? `<div class="pi-tags" style="margin-top:7px">${tags.join('')}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Raw
+  document.getElementById('rawBlock').textContent = rawJson;
+
+  document.getElementById('resultsEl').classList.add('show');
+  document.getElementById('resultsEl').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleRaw() {
+  const block = document.getElementById('rawBlock');
+  block.classList.toggle('show');
+  event.target.textContent = block.classList.contains('show') ? 'Hide raw JSON' : 'View raw JSON response';
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
