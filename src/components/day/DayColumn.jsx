@@ -119,13 +119,35 @@ function MeetingItem({ meeting }) {
   )
 }
 
+// Match briefing flags to events by loose name comparison
+function applyBriefingFlags(events, briefingFlags) {
+  if (!briefingFlags?.length) return events
+  return events.map(event => {
+    const match = briefingFlags.find(f =>
+      f.item && (
+        event.name.toLowerCase().includes(f.item.toLowerCase().slice(0, 20)) ||
+        f.item.toLowerCase().includes(event.name.toLowerCase().slice(0, 20))
+      )
+    )
+    if (!match) return event
+    return { ...event, variant: 'flagged', flag: { type: 'warn', text: match.text } }
+  })
+}
+
 function ScheduleSection() {
-  const { calendar } = useHub()
-  const { events, loading, connecting, connected, signIn } = calendar
-  const now = Date.now()
-  const past     = events.filter(e => new Date(e.endIso).getTime() < now)
-  const upcoming = events.filter(e => new Date(e.endIso).getTime() >= now)
-  const count = events.length
+  const { calendar, briefing: { briefing, loading: briefingLoading } } = useHub()
+  const { events, loading: calLoading, connecting, connected, signIn } = calendar
+
+  const enhancedEvents = applyBriefingFlags(events, briefing?.flags)
+  const now      = Date.now()
+  const past     = enhancedEvents.filter(e => new Date(e.endIso).getTime() < now)
+  const upcoming = enhancedEvents.filter(e => new Date(e.endIso).getTime() >= now)
+  const count    = events.length
+
+  const summaryText = briefing?.summary ?? (
+    count === 0 ? 'No events scheduled today'
+                : `${count} event${count !== 1 ? 's' : ''} today`
+  )
 
   return (
     <>
@@ -147,18 +169,16 @@ function ScheduleSection() {
         </div>
       )}
 
-      {connected && loading && (
+      {connected && calLoading && (
         <div className="cal-loading">
           <div className="cal-skeleton" /><div className="cal-skeleton" /><div className="cal-skeleton short" />
         </div>
       )}
 
-      {connected && !loading && (
+      {connected && !calLoading && (
         <>
-          <div className="day-summary-bar">
-            {count === 0
-              ? 'No events scheduled today'
-              : `${count} event${count !== 1 ? 's' : ''} today`}
+          <div className={`day-summary-bar${briefingLoading ? ' day-summary-bar--loading' : ''}`}>
+            {summaryText}
           </div>
           <div style={{ height: 10 }} />
           {past.map(m => <MeetingItem key={m.id} meeting={m} />)}

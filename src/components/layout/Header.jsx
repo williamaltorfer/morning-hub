@@ -21,8 +21,9 @@ function MicIcon({ color = '#fff' }) {
   )
 }
 
-export default function Header({ greeting = 'You have a full day ahead — let\'s make it count.' }) {
-  const { openSettings } = useHub()
+export default function Header() {
+  const { openSettings, briefing } = useHub()
+  const greeting = briefing.briefing?.greeting ?? (briefing.loading ? '' : 'You have a full day ahead — let\'s make it count.')
   const [dateStr, setDateStr] = useState('')
   const [timeStr, setTimeStr] = useState('')
 

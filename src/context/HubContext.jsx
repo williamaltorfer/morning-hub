@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react'
 import useCalendar from '../hooks/useCalendar'
+import useBriefing from '../hooks/useBriefing'
 
 const HubContext = createContext(null)
 
@@ -10,6 +11,10 @@ export function HubProvider({ children }) {
   const [activeTopicPill, setActiveTopicPill] = useState('all')
 
   const calendar = useCalendar()
+  const briefing = useBriefing({
+    events:    calendar.events,
+    connected: calendar.connected,
+  })
 
   return (
     <HubContext.Provider value={{
@@ -20,6 +25,7 @@ export function HubProvider({ children }) {
       activeScopeTab, setActiveScopeTab,
       activeTopicPill, setActiveTopicPill,
       calendar,
+      briefing,
     }}>
       {children}
     </HubContext.Provider>

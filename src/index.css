@@ -121,7 +121,9 @@ body {
   padding:10px 20px;
   font-family:var(--serif); font-size:13px; font-style:italic;
   color:var(--stone); line-height:1.5;
+  transition: opacity .3s;
 }
+.day-summary-bar--loading { opacity: .45; animation: weather-pulse 1.4s ease-in-out infinite; }
 
 /* ── Meetings ── */
 .meeting-item {
