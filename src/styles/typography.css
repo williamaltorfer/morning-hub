@@ -1,0 +1,4 @@
+/* Section header typography utilities */
+.sec-title  { font-size:9px; font-weight:500; letter-spacing:.2em; text-transform:uppercase; color:var(--stone); }
+.sec-action { font-size:9px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--terra); cursor:pointer; }
+.sec-hdr    { display:flex; align-items:baseline; justify-content:space-between; padding:18px 20px 12px; }

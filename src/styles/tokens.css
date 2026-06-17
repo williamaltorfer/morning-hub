@@ -1,0 +1,29 @@
+:root {
+  --bg:          #FAF8F4;
+  --surface:     #FFFFFF;
+  --surface-2:   #F5F1EB;
+  --border:      rgba(140,136,128,0.18);
+  --border-s:    rgba(140,136,128,0.32);
+  --sage:        #4A5C45;
+  --sage-bg:     rgba(74,92,69,0.08);
+  --charcoal:    #1E1E1E;
+  --terra:       #B5622A;
+  --terra-bg:    rgba(181,98,42,0.09);
+  --terra-light: #C97A45;
+  --stone:       #8C8880;
+  --stone-light: #B5B2AD;
+  --sand:        #F2EBE3;
+  --serif:       'Cormorant Garamond', Georgia, serif;
+  --sans:        'Jost', sans-serif;
+  --script:      'Dancing Script', cursive;
+  --r:           14px;
+
+  --glass-white:     rgba(255,255,255,0.70);
+  --glass-dark:      rgba(20,18,15,0.76);
+  --glass-sage:      rgba(74,92,69,0.80);
+  --glass-border:    rgba(255,255,255,0.50);
+  --glass-border-dk: rgba(255,255,255,0.12);
+  --blur-sm:  blur(10px) saturate(1.5);
+  --blur-md:  blur(20px) saturate(1.8);
+  --blur-lg:  blur(32px) saturate(2.0);
+}
