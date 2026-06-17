@@ -4,10 +4,10 @@ const CACHE_KEY = 'morning_hub_feed'
 const CACHE_TTL = 30 * 60 * 1000
 
 const FEEDS = [
-  { url: 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml', label: 'The Verge · AI',      topic: 'ai'       },
-  { url: 'https://www.marketingbrew.com/feeds/posts',                          label: 'Marketing Brew',       topic: 'perf mktg'},
-  { url: 'https://feeds.wsj.com/xml/rss/3_7085.xml',                           label: 'WSJ · Economy',        topic: 'economy'  },
-  { url: 'https://www.chicagotribune.com/feed/',                                label: 'Chicago Tribune',      topic: 'chicago'  },
+  { url: 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml', label: 'The Verge · AI',        topic: 'ai'       },
+  { url: 'https://www.adexchanger.com/feed/',                                  label: 'AdExchanger',           topic: 'perf mktg'},
+  { url: 'https://feeds.reuters.com/reuters/businessNews',                     label: 'Reuters · Business',    topic: 'economy'  },
+  { url: 'https://blockclubchicago.org/feed/',                                 label: 'Block Club Chicago',    topic: 'chicago'  },
 ]
 
 function relAge(dateStr) {
