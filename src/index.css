@@ -70,6 +70,48 @@ body {
   50%       { opacity: .4; }
 }
 
+/* ── Calendar connect prompt ── */
+.cal-connect {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.48);
+  border-radius: var(--r);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  color: var(--stone);
+}
+.cal-connect svg { flex-shrink: 0; opacity: .6; }
+.cal-connect-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.cal-connect-label { font-size: 12px; font-weight: 500; color: var(--charcoal); }
+.cal-connect-sub   { font-size: 10px; letter-spacing: .04em; }
+.cal-connect-btn {
+  font-family: var(--sans); font-size: 10px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase;
+  background: var(--sage); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 8px 14px; cursor: pointer; white-space: nowrap;
+  transition: opacity .15s;
+}
+.cal-connect-btn:hover   { opacity: .85; }
+.cal-connect-btn:disabled { opacity: .5; cursor: default; }
+
+/* ── Calendar loading skeleton ── */
+.cal-loading { padding: 0; }
+.cal-skeleton {
+  height: 62px; border-radius: var(--r);
+  background: rgba(255,255,255,0.55);
+  margin-bottom: 10px;
+  animation: weather-pulse 1.4s ease-in-out infinite;
+}
+.cal-skeleton.short { height: 46px; width: 70%; }
+
+/* ── Calendar empty state ── */
+.cal-empty {
+  font-family: var(--serif); font-size: 14px; font-style: italic;
+  color: var(--stone); text-align: center; padding: 24px 20px;
+}
+
 /* ── Day summary bar ── */
 .day-summary-bar {
   background:rgba(245,241,235,0.65);
