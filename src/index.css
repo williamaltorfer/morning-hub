@@ -238,6 +238,7 @@ body {
 .task-due-editable:hover { border-bottom-color: currentColor; }
 .t-due-empty { color: var(--stone-light); opacity: 0; }
 .todo-item:hover .t-due-empty { opacity: 1; }
+.t-due-flash { font-weight: 500; }
 .task-date-input { font-family: var(--sans); font-size: 10px; color: var(--charcoal); background: rgba(255,255,255,0.85); border: 1px solid rgba(140,136,128,0.3); border-radius: 4px; padding: 1px 4px; cursor: pointer; }
 
 /* ── Meals ── */

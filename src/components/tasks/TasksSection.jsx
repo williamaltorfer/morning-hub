@@ -229,15 +229,24 @@ function AddTaskForm({ defaultHorizon, onSave, onCancel }) {
 
 function InlineDateEdit({ taskId, dueDate, onUpdate }) {
   const [editing, setEditing] = useState(false)
-  const inputRef = useRef(null)
+  const [flash,   setFlash]   = useState(false)
+  const inputRef     = useRef(null)
+  const committedRef = useRef(false)
 
   useEffect(() => {
-    if (editing) inputRef.current?.showPicker?.()
+    if (editing) {
+      committedRef.current = false
+      inputRef.current?.focus()
+    }
   }, [editing])
 
-  function save(val) {
+  function commit(val) {
+    if (committedRef.current) return
+    committedRef.current = true
     onUpdate(taskId, { dueDate: val || null })
     setEditing(false)
+    setFlash(true)
+    setTimeout(() => setFlash(false), 1500)
   }
 
   if (editing) {
@@ -247,27 +256,27 @@ function InlineDateEdit({ taskId, dueDate, onUpdate }) {
         type="date"
         className="task-date-input"
         defaultValue={dueDate || ''}
-        onBlur={e => save(e.target.value)}
+        onChange={e => { if (e.target.value) commit(e.target.value) }}
+        onBlur={e => commit(e.target.value)}
         onKeyDown={e => {
-          if (e.key === 'Enter')  save(e.target.value)
-          if (e.key === 'Escape') setEditing(false)
+          if (e.key === 'Escape') { committedRef.current = true; setEditing(false) }
         }}
         onClick={e => e.stopPropagation()}
       />
     )
   }
 
-  const label = fmtDue(dueDate)
-  const overdue = !dueDate ? false : isOverdue(dueDate) && !isToday(dueDate)
+  const label   = fmtDue(dueDate)
+  const overdue = dueDate && isOverdue(dueDate) && !isToday(dueDate)
 
   return (
     <span
-      className={`t-due task-due-editable${!label ? ' t-due-empty' : ''}`}
-      style={overdue ? { color: 'var(--terra)' } : {}}
+      className={`t-due task-due-editable${!label ? ' t-due-empty' : ''}${flash ? ' t-due-flash' : ''}`}
+      style={flash ? { color: 'var(--sage)' } : overdue ? { color: 'var(--terra)' } : {}}
       onClick={e => { e.stopPropagation(); setEditing(true) }}
       title="Click to change date"
     >
-      {label || 'Set date'}
+      {flash ? 'Saved' : (label || 'Set date')}
     </span>
   )
 }
