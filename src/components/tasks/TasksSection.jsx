@@ -281,6 +281,62 @@ function InlineDateEdit({ taskId, dueDate, onUpdate }) {
   )
 }
 
+function InlineTitleEdit({ taskId, title, done, onUpdate }) {
+  const [editing, setEditing] = useState(false)
+  const [val,     setVal]     = useState(title)
+  const [flash,   setFlash]   = useState(false)
+  const inputRef     = useRef(null)
+  const committedRef = useRef(false)
+
+  useEffect(() => {
+    if (editing) {
+      committedRef.current = false
+      setVal(title)
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [editing, title])
+
+  function commit() {
+    if (committedRef.current) return
+    committedRef.current = true
+    const trimmed = val.trim()
+    if (trimmed && trimmed !== title) {
+      onUpdate(taskId, { title: trimmed })
+      setFlash(true)
+      setTimeout(() => setFlash(false), 1500)
+    }
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        className="task-title-input"
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => {
+          if (e.key === 'Enter')  { e.preventDefault(); commit() }
+          if (e.key === 'Escape') { committedRef.current = true; setEditing(false) }
+        }}
+        onClick={e => e.stopPropagation()}
+      />
+    )
+  }
+
+  return (
+    <div
+      className={`t-task${done ? ' done' : ''}${flash ? ' t-title-flash' : ''}`}
+      onClick={e => { e.stopPropagation(); setEditing(true) }}
+      title="Click to edit"
+    >
+      {title}
+    </div>
+  )
+}
+
 function TaskItem({ task, onToggle, onDelete, onUpdate }) {
   return (
     <div className={`todo-item${task.done ? ' task-done' : ''}`}>
@@ -289,9 +345,9 @@ function TaskItem({ task, onToggle, onDelete, onUpdate }) {
         onClick={() => onToggle(task.id)}
         style={{ cursor: 'pointer', flexShrink: 0 }}
       />
-      <div className="t-body" onClick={() => onToggle(task.id)} style={{ cursor: 'pointer', flex: 1 }}>
-        <div className={`t-task${task.done ? ' done' : ''}`}>{task.title}</div>
-        <div className="t-meta">
+      <div className="t-body" style={{ flex: 1 }}>
+        <InlineTitleEdit taskId={task.id} title={task.title} done={task.done} onUpdate={onUpdate} />
+        <div className="t-meta" onClick={() => onToggle(task.id)} style={{ cursor: 'pointer' }}>
           <InlineDateEdit taskId={task.id} dueDate={task.dueDate} onUpdate={onUpdate} />
           <span className={`t-pri ${priClass(task.priority)}`}>{priLabel(task.priority)}</span>
         </div>
@@ -437,9 +493,9 @@ function GoalTaskItem({ task, onToggle, onDelete, onUpdate }) {
         onClick={() => onToggle(task.id)}
         style={{ cursor: 'pointer', flexShrink: 0 }}
       />
-      <div className="t-body" onClick={() => onToggle(task.id)} style={{ cursor: 'pointer', flex: 1 }}>
-        <div className={`t-task${task.done ? ' done' : ''}`}>{task.title}</div>
-        <div className="t-meta">
+      <div className="t-body" style={{ flex: 1 }}>
+        <InlineTitleEdit taskId={task.id} title={task.title} done={task.done} onUpdate={onUpdate} />
+        <div className="t-meta" onClick={() => onToggle(task.id)} style={{ cursor: 'pointer' }}>
           <InlineDateEdit taskId={task.id} dueDate={task.dueDate} onUpdate={onUpdate} />
           <span className={`t-pri ${priClass(task.priority)}`}>{priLabel(task.priority)}</span>
           <span className="gv-horizon-badge">{task.horizon}</span>

@@ -240,6 +240,12 @@ body {
 .todo-item:hover .t-due-empty { opacity: 1; }
 .t-due-flash { font-weight: 500; }
 .task-date-input { font-family: var(--sans); font-size: 10px; color: var(--charcoal); background: rgba(255,255,255,0.85); border: 1px solid rgba(140,136,128,0.3); border-radius: 4px; padding: 1px 4px; cursor: pointer; }
+.t-task { cursor: text; }
+.t-task:hover { color: var(--sage); }
+.t-task.done { cursor: default; }
+.t-task.done:hover { color: var(--stone-light); }
+.t-title-flash { color: var(--sage) !important; }
+.task-title-input { width: 100%; font-family: var(--sans); font-size: 13px; font-weight: 400; color: var(--charcoal); background: transparent; border: none; border-bottom: 1px solid var(--sage); outline: none; padding: 0 0 1px; line-height: 1.4; margin-bottom: 4px; }
 
 /* ── Meals ── */
 .meal-row { display:flex; align-items:stretch; border-bottom:1px solid var(--border); }
