@@ -213,6 +213,29 @@ body {
 .task-generate-btn:hover { border-color: var(--sage); background: rgba(74,92,69,0.06); }
 .task-generate-btn:disabled { opacity: .55; cursor: default; }
 
+/* Goal filter pills */
+.goal-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.goal-pill { font-family: var(--sans); font-size: 9px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; padding: 5px 10px; border-radius: 20px; border: 1px solid rgba(140,136,128,0.28); background: rgba(255,255,255,0.55); color: var(--stone); cursor: pointer; transition: all .18s; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.goal-pill:hover { border-color: var(--terra); color: var(--terra); background: rgba(181,98,42,0.06); }
+.goal-pill.active { background: var(--terra); border-color: var(--terra); color: #fff; }
+
+/* Goal view header card */
+.gv-header { padding: 16px 18px; margin-bottom: 14px; }
+.gv-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.gv-horizon { font-size: 8px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--stone-light); margin-bottom: 4px; }
+.gv-title { font-family: var(--serif); font-size: 18px; font-weight: 400; font-style: italic; color: var(--charcoal); line-height: 1.3; }
+.gv-metric { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--stone); margin-bottom: 8px; }
+.gv-deadline { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--stone); margin-bottom: 10px; }
+.gv-days { font-size: 10px; font-weight: 500; color: var(--sage); }
+.gv-days.urgent { color: var(--terra); }
+.gv-progress { display: flex; flex-direction: column; gap: 5px; }
+.gv-progress-bar { height: 4px; background: rgba(140,136,128,0.15); border-radius: 2px; overflow: hidden; }
+.gv-progress-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--sage), rgba(74,92,69,0.6)); transition: width .5s ease; }
+.gv-progress-label { font-size: 10px; color: var(--stone-light); letter-spacing: .04em; }
+
+/* Horizon badge on tasks in goal view */
+.gv-horizon-badge { font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(140,136,128,0.1); color: var(--stone); }
+
 /* ── Meals ── */
 .meal-row { display:flex; align-items:stretch; border-bottom:1px solid var(--border); }
 .meal-row:last-child { border-bottom:none; }

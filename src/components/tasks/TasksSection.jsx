@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useHub } from '../../context/HubContext'
 import useTasks from '../../hooks/useTasks'
 
@@ -110,7 +110,22 @@ function loadGoalOptions() {
   } catch { return [] }
 }
 
+function loadAllGoals() {
+  try {
+    const raw = localStorage.getItem('morning_hub_context')
+    return raw ? (JSON.parse(raw)?.goals ?? []) : []
+  } catch { return [] }
+}
+
 // ── Icons ────────────────────────────────────────────────────
+
+function TargetIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+    </svg>
+  )
+}
 
 function TrashIcon() {
   return (
@@ -306,6 +321,100 @@ function GoalGroup({ goalKey, goalTitle, tasks, suggestions, onToggle, onDelete,
   )
 }
 
+// ── Goal View ────────────────────────────────────────────────
+
+const HORIZON_ORDER = { quarterly: 0, monthly: 1, weekly: 2, today: 3 }
+const STATUS_LABEL  = { 'on-track': 'On Track', 'at-risk': 'At Risk', blocked: 'Blocked', complete: 'Complete' }
+const STATUS_CLS    = { 'on-track': 'status-on-track', 'at-risk': 'status-at-risk', blocked: 'status-at-risk', complete: 'status-complete' }
+
+function GoalViewHeader({ goal, tasks }) {
+  const total = tasks.length
+  const done  = tasks.filter(t => t.done).length
+  const pct   = total > 0 ? Math.round((done / total) * 100) : 0
+
+  const deadline = goal.deadline
+    ? new Date(goal.deadline + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null
+
+  const daysLeft = goal.deadline
+    ? Math.ceil((new Date(goal.deadline + 'T23:59:59') - new Date()) / 86400000)
+    : null
+
+  return (
+    <div className="gv-header card">
+      <div className="gv-header-top">
+        <div>
+          <div className="gv-horizon">{goal.horizon}</div>
+          <div className="gv-title">{goal.title}</div>
+        </div>
+        <span className={`goal-status ${STATUS_CLS[goal.status] ?? 'status-on-track'}`}>
+          {STATUS_LABEL[goal.status] ?? goal.status}
+        </span>
+      </div>
+
+      {goal.metric && (
+        <div className="gv-metric">
+          <TargetIcon /> {goal.metric}
+        </div>
+      )}
+
+      {deadline && (
+        <div className="gv-deadline">
+          <span>Target: {deadline}</span>
+          {daysLeft !== null && (
+            <span className={`gv-days ${daysLeft <= 14 ? 'urgent' : ''}`}>
+              {daysLeft > 0 ? `${daysLeft}d remaining` : daysLeft === 0 ? 'Due today' : `${Math.abs(daysLeft)}d overdue`}
+            </span>
+          )}
+        </div>
+      )}
+
+      {total > 0 && (
+        <div className="gv-progress">
+          <div className="gv-progress-bar">
+            <div className="gv-progress-fill" style={{ width: `${pct}%` }} />
+          </div>
+          <span className="gv-progress-label">{done}/{total} tasks complete</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function GoalTaskItem({ task, onToggle, onDelete }) {
+  const due     = fmtDue(task.dueDate)
+  const overdue = !task.done && task.dueDate && isOverdue(task.dueDate) && !isToday(task.dueDate)
+
+  return (
+    <div className={`todo-item${task.done ? ' task-done' : ''}`}>
+      <div
+        className={`t-check${task.done ? ' done' : ''}`}
+        onClick={() => onToggle(task.id)}
+        style={{ cursor: 'pointer', flexShrink: 0 }}
+      />
+      <div className="t-body" onClick={() => onToggle(task.id)} style={{ cursor: 'pointer', flex: 1 }}>
+        <div className={`t-task${task.done ? ' done' : ''}`}>{task.title}</div>
+        <div className="t-meta">
+          {due && (
+            <span className="t-due" style={overdue ? { color: 'var(--terra)' } : {}}>
+              {due}
+            </span>
+          )}
+          <span className={`t-pri ${priClass(task.priority)}`}>{priLabel(task.priority)}</span>
+          <span className="gv-horizon-badge">{task.horizon}</span>
+        </div>
+      </div>
+      <button
+        className="task-delete-btn"
+        onClick={e => { e.stopPropagation(); onDelete(task.id) }}
+        aria-label="Delete task"
+      >
+        <TrashIcon />
+      </button>
+    </div>
+  )
+}
+
 // ── Main Section ─────────────────────────────────────────────
 
 export default function TasksSection() {
@@ -316,7 +425,10 @@ export default function TasksSection() {
     acceptSuggestion, dismissSuggestion, generateSuggestions,
   } = useTasks()
 
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [showAddForm,    setShowAddForm]    = useState(false)
+  const [selectedGoalId, setSelectedGoalId] = useState(null)
+
+  const goals = useMemo(() => loadAllGoals(), [])
 
   const handleAddTask = useCallback((data) => {
     addTask(data)
@@ -328,76 +440,132 @@ export default function TasksSection() {
     setShowAddForm(false)
   }, [setActiveScopeTab])
 
+  const handleGoalSelect = useCallback((id) => {
+    setSelectedGoalId(prev => prev === id ? null : id)
+    setShowAddForm(false)
+  }, [])
+
+  // ── Goal view data ───────────────────────────────────────────
+  const selectedGoal = selectedGoalId ? goals.find(g => g.id === selectedGoalId) : null
+
+  const goalViewTasks = useMemo(() => {
+    if (!selectedGoalId) return []
+    return [...tasks]
+      .filter(t => t.goalRef === selectedGoalId)
+      .sort((a, b) => {
+        // Sort by due date (nulls last), then by horizon
+        if (a.dueDate && b.dueDate) return new Date(a.dueDate) - new Date(b.dueDate)
+        if (a.dueDate) return -1
+        if (b.dueDate) return 1
+        return (HORIZON_ORDER[a.horizon] ?? 99) - (HORIZON_ORDER[b.horizon] ?? 99)
+      })
+  }, [selectedGoalId, tasks])
+
+  const goalViewSuggestions = useMemo(() => {
+    if (!selectedGoalId) return []
+    return suggestions.filter(s => s.goalRef === selectedGoalId)
+  }, [selectedGoalId, suggestions])
+
+  // ── Normal scope view data ───────────────────────────────────
   const scopeTasks       = filterTasksByScope(tasks, activeScopeTab)
   const scopeSuggestions = activeScopeTab === 'today'
     ? []
     : suggestions.filter(s => s.horizon === activeScopeTab)
-
   const grouped = groupByGoal(scopeTasks, scopeSuggestions)
-
   const hasContent = grouped.length > 0
+
+  const goalsWithTasks = useMemo(() => {
+    const refs = new Set([
+      ...tasks.map(t => t.goalRef),
+      ...suggestions.map(s => s.goalRef),
+    ])
+    return goals.filter(g => refs.has(g.id))
+  }, [goals, tasks, suggestions])
 
   return (
     <>
       <div className="sec-hdr">
         <span className="sec-title">Priority Tasks</span>
-        <span
-          className="sec-action"
-          onClick={() => setShowAddForm(s => !s)}
-        >
+        <span className="sec-action" onClick={() => setShowAddForm(s => !s)}>
           {showAddForm ? 'Cancel' : '+ Add Task'}
         </span>
       </div>
 
-      <div className="scope-tabs">
-        {SCOPE_TABS.map(tab => (
-          <button
-            key={tab.id}
-            className={`stab${activeScopeTab === tab.id ? ' active' : ''}`}
-            onClick={() => handleTabSwitch(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* Goal filter pills */}
+      {goalsWithTasks.length > 0 && (
+        <div className="goal-pills">
+          {goalsWithTasks.map(g => (
+            <button
+              key={g.id}
+              className={`goal-pill${selectedGoalId === g.id ? ' active' : ''}`}
+              onClick={() => handleGoalSelect(g.id)}
+              title={g.title}
+            >
+              {g.title}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Scope tabs — hidden when a goal is selected */}
+      {!selectedGoalId && (
+        <div className="scope-tabs">
+          {SCOPE_TABS.map(tab => (
+            <button
+              key={tab.id}
+              className={`stab${activeScopeTab === tab.id ? ' active' : ''}`}
+              onClick={() => handleTabSwitch(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {showAddForm && (
         <AddTaskForm
-          defaultHorizon={activeScopeTab}
+          defaultHorizon={selectedGoalId ? 'weekly' : activeScopeTab}
           onSave={handleAddTask}
           onCancel={() => setShowAddForm(false)}
         />
       )}
 
-      <div className="card">
-        {hasContent ? (
-          grouped.map(([key, group]) => (
-            <GoalGroup
-              key={key}
-              goalKey={key}
-              goalTitle={group.goalTitle}
-              tasks={group.tasks}
-              suggestions={group.suggestions}
-              onToggle={toggleDone}
-              onDelete={deleteTask}
-              onAccept={acceptSuggestion}
-              onDismiss={dismissSuggestion}
-            />
-          ))
-        ) : (
-          <div className="tasks-empty">
-            {activeScopeTab === 'today'
-              ? 'No tasks for today. Add one above or check Weekly.'
-              : generating
-              ? 'Generating suggestions…'
-              : 'No tasks yet. Add one above or refresh suggestions.'
-            }
-          </div>
-        )}
-      </div>
-
-      {activeScopeTab !== 'today' && (
+      {/* ── Goal view ── */}
+      {selectedGoal ? (
         <>
+          <GoalViewHeader goal={selectedGoal} tasks={goalViewTasks} />
+
+          <div className="card">
+            {goalViewTasks.length === 0 && goalViewSuggestions.length === 0 ? (
+              <div className="tasks-empty">
+                No tasks for this goal yet. Add one above or refresh suggestions.
+              </div>
+            ) : (
+              <>
+                {goalViewTasks.map(t => (
+                  <GoalTaskItem
+                    key={t.id}
+                    task={t}
+                    onToggle={toggleDone}
+                    onDelete={deleteTask}
+                  />
+                ))}
+                {goalViewSuggestions.length > 0 && (
+                  <div className="suggestions-block">
+                    {goalViewSuggestions.map(s => (
+                      <SuggestionItem
+                        key={s.id}
+                        s={s}
+                        onAccept={acceptSuggestion}
+                        onDismiss={dismissSuggestion}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
           <button
             className="task-generate-btn"
             onClick={generating ? undefined : generateSuggestions}
@@ -410,6 +578,54 @@ export default function TasksSection() {
             <p style={{ fontSize: 12, color: 'var(--terra)', marginTop: 6, textAlign: 'center' }}>
               {generateError}
             </p>
+          )}
+        </>
+      ) : (
+        /* ── Normal scope view ── */
+        <>
+          <div className="card">
+            {hasContent ? (
+              grouped.map(([key, group]) => (
+                <GoalGroup
+                  key={key}
+                  goalKey={key}
+                  goalTitle={group.goalTitle}
+                  tasks={group.tasks}
+                  suggestions={group.suggestions}
+                  onToggle={toggleDone}
+                  onDelete={deleteTask}
+                  onAccept={acceptSuggestion}
+                  onDismiss={dismissSuggestion}
+                />
+              ))
+            ) : (
+              <div className="tasks-empty">
+                {activeScopeTab === 'today'
+                  ? 'No tasks for today. Add one above or check Weekly.'
+                  : generating
+                  ? 'Generating suggestions…'
+                  : 'No tasks yet. Add one above or refresh suggestions.'
+                }
+              </div>
+            )}
+          </div>
+
+          {activeScopeTab !== 'today' && (
+            <>
+              <button
+                className="task-generate-btn"
+                onClick={generating ? undefined : generateSuggestions}
+                disabled={generating}
+              >
+                <RefreshIcon />
+                {generating ? 'Generating suggestions…' : 'Refresh Suggestions'}
+              </button>
+              {generateError && (
+                <p style={{ fontSize: 12, color: 'var(--terra)', marginTop: 6, textAlign: 'center' }}>
+                  {generateError}
+                </p>
+              )}
+            </>
           )}
         </>
       )}
