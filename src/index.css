@@ -213,6 +213,18 @@ body {
 .task-generate-btn:hover { border-color: var(--sage); background: rgba(74,92,69,0.06); }
 .task-generate-btn:disabled { opacity: .55; cursor: default; }
 
+/* Calendar selector in settings */
+.cal-select-section { margin-top: 16px; }
+.cal-select-list { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+.cal-select-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: background .15s; }
+.cal-select-row:hover { background: rgba(140,136,128,0.08); }
+.cal-select-check { width: 14px; height: 14px; accent-color: var(--sage); cursor: pointer; flex-shrink: 0; }
+.cal-select-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cal-select-name { font-size: 12px; color: var(--charcoal); flex: 1; }
+.cal-select-badge { font-size: 8px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--stone); background: rgba(140,136,128,0.12); padding: 2px 6px; border-radius: 4px; }
+.cal-select-actions { display: flex; gap: 12px; margin-top: 6px; padding-left: 2px; }
+.context-hint-link { font-size: 10px; color: var(--sage); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
 /* Goal filter dropdown */
 .goal-filter-select { width: 100%; margin-bottom: 12px; padding: 8px 12px; font-family: var(--sans); font-size: 11px; font-weight: 400; color: var(--charcoal); background: rgba(255,255,255,0.68); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.55); border-radius: 8px; box-shadow: 0 1px 0 rgba(255,255,255,0.88) inset, 0 2px 8px rgba(30,20,10,0.05); cursor: pointer; appearance: auto; }
 

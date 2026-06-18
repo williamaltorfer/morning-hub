@@ -91,49 +91,65 @@ function mapEvent(event) {
 
 // ── API fetch ────────────────────────────────────────────────
 
-async function fetchEvents(accessToken) {
+async function fetchEvents(accessToken, calendarIds = ['primary']) {
   const start = new Date(); start.setHours(0, 0, 0, 0)
   const end   = new Date(); end.setHours(23, 59, 59, 999)
 
   const params = new URLSearchParams({
-    timeMin:       start.toISOString(),
-    timeMax:       end.toISOString(),
-    singleEvents:  'true',
-    orderBy:       'startTime',
-    maxResults:    '20',
-  })
+    timeMin:      start.toISOString(),
+    timeMax:      end.toISOString(),
+    singleEvents: 'true',
+    orderBy:      'startTime',
+    maxResults:   '30',
+  }).toString()
 
-  const resp = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
+  const results = await Promise.allSettled(
+    calendarIds.map(id => fetchCalendarItems(id, params, accessToken))
   )
 
-  if (!resp.ok) {
-    const err = new Error(`Calendar API ${resp.status}`)
-    err.status = resp.status
-    throw err
-  }
-
-  const json = await resp.json()
-  return (json.items || []).map(mapEvent)
+  const seen = new Set()
+  return results
+    .flatMap(r => r.status === 'fulfilled' ? r.value : [])
+    .filter(e => {
+      if (seen.has(e.id)) return false
+      seen.add(e.id)
+      return true
+    })
+    .map(mapEvent)
+    .sort((a, b) => {
+      if (!a.startIso) return 1
+      if (!b.startIso) return -1
+      return new Date(a.startIso) - new Date(b.startIso)
+    })
 }
 
 const SPECIAL_RE  = /birthday|anniversary|bday/i
 const UPCOMING_RE = /flight|airline|airport|hotel|airbnb|resort|appointment|appt|doctor|dentist|medical|physical|therapy|therapist|conference|summit|workshop|trip|travel|vacation|holiday|train|amtrak|visit|checkup|check.?up/i
 
-async function findBirthdayCalendarId(accessToken) {
+async function fetchAllCalendars(accessToken) {
   try {
     const resp = await fetch(
       'https://www.googleapis.com/calendar/v3/users/me/calendarList',
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
-    if (!resp.ok) return null
+    if (!resp.ok) return []
     const data = await resp.json()
-    const cal = (data.items || []).find(c =>
-      c.summary?.toLowerCase().includes('birthday') ||
-      c.id?.includes('contacts@group')
-    )
-    return cal?.id ?? null
+    return (data.items || []).filter(c =>
+      !c.hidden && c.accessRole !== 'freeBusyReader'
+    ).map(c => ({
+      id:      c.id,
+      summary: c.summary || c.id,
+      color:   c.backgroundColor || '#4A5C45',
+      primary: !!c.primary,
+      isBirthday: c.summary?.toLowerCase().includes('birthday') || c.id?.includes('contacts@group'),
+    }))
+  } catch { return [] }
+}
+
+function loadSelectedCalendarIds() {
+  try {
+    const raw = localStorage.getItem('morning_hub_context')
+    return JSON.parse(raw)?.preferences?.selected_calendar_ids ?? null
   } catch { return null }
 }
 
@@ -149,7 +165,7 @@ async function fetchCalendarItems(calendarId, params, accessToken) {
   } catch { return [] }
 }
 
-async function fetchSpecialEvents(accessToken) {
+async function fetchSpecialEvents(accessToken, allCalendars = []) {
   const start = new Date(); start.setHours(0, 0, 0, 0)
   const end   = new Date(start); end.setDate(start.getDate() + 14); end.setHours(23, 59, 59, 999)
 
@@ -161,14 +177,12 @@ async function fetchSpecialEvents(accessToken) {
     maxResults:   '50',
   }).toString()
 
-  const [birthdayCalId, primaryItems] = await Promise.all([
-    findBirthdayCalendarId(accessToken),
-    fetchCalendarItems('primary', params, accessToken),
-  ])
+  const birthdayCal = allCalendars.find(c => c.isBirthday)
 
-  const birthdayItems = birthdayCalId
-    ? await fetchCalendarItems(birthdayCalId, params, accessToken)
-    : []
+  const [primaryItems, birthdayItems] = await Promise.all([
+    fetchCalendarItems('primary', params, accessToken),
+    birthdayCal ? fetchCalendarItems(birthdayCal.id, params, accessToken) : Promise.resolve([]),
+  ])
 
   // Deduplicate by event summary+date, then filter for keywords
   const seen = new Set()
@@ -192,7 +206,7 @@ async function fetchSpecialEvents(accessToken) {
     .sort((a, b) => a.daysAway - b.daysAway)
 }
 
-async function fetchUpcomingEvents(accessToken) {
+async function fetchUpcomingEvents(accessToken, calendarIds = ['primary']) {
   const start = new Date(); start.setHours(0, 0, 0, 0)
   const end   = new Date(start); end.setDate(start.getDate() + 14); end.setHours(23, 59, 59, 999)
 
@@ -204,7 +218,13 @@ async function fetchUpcomingEvents(accessToken) {
     maxResults:   '50',
   }).toString()
 
-  const items = await fetchCalendarItems('primary', params, accessToken)
+  const results = await Promise.allSettled(
+    calendarIds.map(id => fetchCalendarItems(id, params, accessToken))
+  )
+  const seen  = new Set()
+  const items = results
+    .flatMap(r => r.status === 'fulfilled' ? r.value : [])
+    .filter(e => { if (seen.has(e.id)) return false; seen.add(e.id); return true })
   const today = new Date(); today.setHours(0, 0, 0, 0)
 
   function classifyType(name, isAllDay) {
@@ -258,9 +278,10 @@ export default function useCalendar() {
   const [events,          setEvents]          = useState([])
   const [specialEvents,   setSpecialEvents]   = useState([])
   const [upcomingEvents,  setUpcomingEvents]  = useState([])
+  const [calendars,       setCalendars]       = useState([])
   const [loading,         setLoading]         = useState(false)
-  const [connecting,     setConnecting]     = useState(false)
-  const [error,          setError]          = useState(null)
+  const [connecting,      setConnecting]      = useState(false)
+  const [error,           setError]           = useState(null)
   const clientRef = useRef(null)
 
   // Initialize GIS token client (script is async-deferred)
@@ -296,24 +317,38 @@ export default function useCalendar() {
     if (!token) return
     setLoading(true)
     setError(null)
-    Promise.all([
-      fetchEvents(token),
-      fetchSpecialEvents(token).catch(() => []),
-      fetchUpcomingEvents(token).catch(() => []),
-    ])
-      .then(([evts, specials, upcoming]) => {
-        setEvents(evts)
-        setSpecialEvents(specials)
-        setUpcomingEvents(upcoming)
-      })
-      .catch(err => {
-        if (err.status === 401) {
-          localStorage.removeItem(TOKEN_KEY)
-          setToken(null)
-        }
-        setError(err.message)
-      })
-      .finally(() => setLoading(false))
+
+    fetchAllCalendars(token).then(allCals => {
+      setCalendars(allCals)
+
+      // Resolve which calendars to fetch from
+      const savedIds = loadSelectedCalendarIds()
+      const nonBirthday = allCals.filter(c => !c.isBirthday).map(c => c.id)
+      const activeIds = savedIds && savedIds.length > 0
+        ? savedIds.filter(id => nonBirthday.includes(id))
+        : nonBirthday
+
+      const calIds = activeIds.length > 0 ? activeIds : ['primary']
+
+      Promise.all([
+        fetchEvents(token, calIds),
+        fetchSpecialEvents(token, allCals).catch(() => []),
+        fetchUpcomingEvents(token, calIds).catch(() => []),
+      ])
+        .then(([evts, specials, upcoming]) => {
+          setEvents(evts)
+          setSpecialEvents(specials)
+          setUpcomingEvents(upcoming)
+        })
+        .catch(err => {
+          if (err.status === 401) {
+            localStorage.removeItem(TOKEN_KEY)
+            setToken(null)
+          }
+          setError(err.message)
+        })
+        .finally(() => setLoading(false))
+    })
   }, [token])
 
   const signIn = useCallback(() => {
@@ -326,17 +361,25 @@ export default function useCalendar() {
     localStorage.removeItem(TOKEN_KEY)
     setToken(null)
     setEvents([])
+    setCalendars([])
+  }, [token])
+
+  // Re-fetch events when selected calendars change in preferences
+  const refetch = useCallback(() => {
+    if (token) setToken(t => t)  // trigger the effect by forcing a re-run
   }, [token])
 
   return {
     events,
     specialEvents,
     upcomingEvents,
+    calendars,
     loading,
     connecting,
     error,
     connected: !!token,
     signIn,
     signOut,
+    refetch,
   }
 }

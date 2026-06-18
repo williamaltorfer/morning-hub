@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useHub } from '../../context/HubContext'
 
 // ── Constants ────────────────────────────────────────────────
@@ -338,9 +338,58 @@ function ContextTab({ context, flags, onChange, onFlagsChange }) {
   )
 }
 
+// ── Calendar selector ────────────────────────────────────────
+
+function CalendarsSection({ calendars, selectedIds, onChange }) {
+  const visible = calendars.filter(c => !c.isBirthday)
+
+  if (!visible.length) return null
+
+  function toggle(id) {
+    const next = selectedIds.includes(id)
+      ? selectedIds.filter(x => x !== id)
+      : [...selectedIds, id]
+    // Always keep at least one selected
+    if (next.length === 0) return
+    onChange(next)
+  }
+
+  function selectAll()  { onChange(visible.map(c => c.id)) }
+  function selectNone() { const first = visible[0]?.id; if (first) onChange([first]) }
+
+  return (
+    <div className="cal-select-section">
+      <label className="context-field-label">Calendars</label>
+      <div className="cal-select-list">
+        {visible.map(cal => {
+          const checked = selectedIds.includes(cal.id)
+          return (
+            <label key={cal.id} className="cal-select-row">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => toggle(cal.id)}
+                className="cal-select-check"
+              />
+              <span className="cal-select-dot" style={{ background: cal.color }} />
+              <span className="cal-select-name">{cal.summary}</span>
+              {cal.primary && <span className="cal-select-badge">Primary</span>}
+            </label>
+          )
+        })}
+      </div>
+      <div className="cal-select-actions">
+        <span className="context-hint-link" onClick={selectAll}>Select all</span>
+        <span className="context-hint-link" onClick={selectNone}>Clear</span>
+      </div>
+      <p className="context-hint">Changes apply after saving.</p>
+    </div>
+  )
+}
+
 // ── Preferences tab ──────────────────────────────────────────
 
-function PrefsTab({ prefs, onChange }) {
+function PrefsTab({ prefs, onChange, calendars }) {
   const [geocoding,   setGeocoding]   = useState(false)
   const [geocodeMsg,  setGeocodeMsg]  = useState('')
 
@@ -420,6 +469,14 @@ function PrefsTab({ prefs, onChange }) {
         ))}
       </div>
       <p className="context-hint">Controls how much Claude writes in your morning greeting and summary.</p>
+
+      {calendars?.length > 0 && (
+        <CalendarsSection
+          calendars={calendars}
+          selectedIds={prefs.selected_calendar_ids ?? calendars.filter(c => !c.isBirthday).map(c => c.id)}
+          onChange={ids => update('selected_calendar_ids', ids)}
+        />
+      )}
     </div>
   )
 }
@@ -433,7 +490,7 @@ const SP_TABS = [
 ]
 
 export default function SettingsPanel() {
-  const { settingsOpen, closeSettings, activeSpTab, setActiveSpTab, briefing } = useHub()
+  const { settingsOpen, closeSettings, activeSpTab, setActiveSpTab, briefing, calendar } = useHub()
 
   const [draft,   setDraft]   = useState(loadContext)
   const [saved,   setSaved]   = useState(false)
@@ -453,6 +510,7 @@ export default function SettingsPanel() {
     saveContext(draft)
     setSaved(true)
     briefing.refresh()
+    calendar.refetch()
     setTimeout(() => { setSaved(false); closeSettings() }, 1000)
   }
 
@@ -502,6 +560,7 @@ export default function SettingsPanel() {
             <PrefsTab
               prefs={draft.preferences}
               onChange={preferences => setDraft(d => ({ ...d, preferences }))}
+              calendars={calendar.calendars}
             />
           </div>
         </div>
